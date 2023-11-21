@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 import os
 from cycler import cycler
+import numpy as np
 
 plt.rcParams['axes.prop_cycle'] = cycler(color=plt.cm.tab20.colors)
 
@@ -25,8 +26,8 @@ fig_2, axs_2 = plt.subplots(3, 4, figsize=(20, 10))
 #---modify end---
 
 # def smoothed_outlier()
+os.chdir(os.path.join(os.getcwd(),'VRAuth'))
 
-import numpy as np
 
 def replace_local_outliers(arr, window_size=5, threshold=1.5):
     """
