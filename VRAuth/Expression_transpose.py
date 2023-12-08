@@ -11,8 +11,8 @@ def remove_csv_extension(filename):
         # 如果字符串不是以".csv"结尾，返回原始字符串
         return filename
 
-print(os.getcwd())
-os.chdir(os.path.join(os.getcwd(),'VRAuth'))
+# print(os.getcwd())
+os.chdir(os.path.join(os.getcwd(),'VRAuth 2'))
 files = glob.glob('Expression*[0-9].csv')
 
 for file in files:
