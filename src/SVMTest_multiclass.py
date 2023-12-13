@@ -7,7 +7,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, classification_report
 from sklearn.model_selection import StratifiedKFold
 import os
-os.chdir(os.path.join(os.getcwd(),'VRAuth 2'))
+os.chdir(os.path.join(os.getcwd(),'data'))
 
 def smooth_data(arr, window_parameter=31, polyorder_parameter=2):
     arr_smoothed = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
@@ -222,6 +222,9 @@ for user in user_names:
 
 # 生成示例数据
 labels = np.repeat(np.arange(num_people), authentications_per_person)
+# labels = np.array([0 if user == 'zs' else 1 for user in user_names for _ in range(authentications_per_person)]) #binary_classification
+
+
 data = result_array
 # 打印示例数据形状
 print("Data shape:", data.shape)
