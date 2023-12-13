@@ -10,79 +10,14 @@ import os
 from sklearn.linear_model import LogisticRegression  # 导入逻辑回归模型，因为逻辑回归是二分类问题的常用模型。
 from sklearn.svm import SVC
 
+from data_preprocess import smooth_data, extract_features, difference_gaze_head
+
 
 # os.chdir(os.path.join(os.getcwd(), 'data'))
 
 
-def smooth_data(arr, window_parameter=31, polyorder_parameter=2):
-    arr_smoothed = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
-    return arr_smoothed
 
-
-def difference_yaw_gaze_head(user, date, num):
-    data1 = pd.read_csv(os.path.join("unity_processed_data", "GazeCalculate_data_" + user + "-" + date + "-" + str(
-        num + 1) + "_unity_processed.csv"))
-    data2 = pd.read_csv(os.path.join("unity_processed_data",
-                                     "Head_data_" + user + "-" + date + "-" + str(num + 1) + "_unity_processed.csv"))
-    # Create DataFrame
-    df1 = pd.DataFrame(data1)
-    df2 = pd.DataFrame(data2)
-
-    L_Yaw_zero = df1['L_Yaw'][0]
-    L_Yaw_df = [x - L_Yaw_zero if abs(x - L_Yaw_zero) < 200 else (
-        x - L_Yaw_zero - 360 if x - L_Yaw_zero > 200 else x - L_Yaw_zero + 360) for x in df1['L_Yaw']]
-    Yaw_zero = df2['Yaw'][0] if df2['Yaw'][0] < 180 else df2['Yaw'][0] - 360
-    Yaw_df = [x - Yaw_zero if x < 180 else x - Yaw_zero - 360 for x in df2['Yaw']]
-
-    return [x - y for x, y in zip(L_Yaw_df, Yaw_df)]
-
-
-def extract_features(sequence):  # 把序列切成十段，每段取均值、最大值、最小值、方差，共40个特征，返回一个拼接的一维数组
-    # 计算每个子序列的基本长度和额外长度
-    n = len(sequence)
-    # print("length" + str(n))
-    slice_num = 10
-    sub_seq_length = n // slice_num if n % slice_num == 0 else n // slice_num + 1# 向上取整
-    remainder = sub_seq_length - (n // slice_num + 1) * slice_num + n # 处理最后一段未填充满
-
-    # 初始化特征数组
-    features = []
-    features_mean = []
-    features_max = []
-    features_min = []
-    features_var = []
-    start = 0
-
-    # 对每个子序列进行迭代
-    for i in range(slice_num):
-        # 调整子序列长度
-        end = start
-        if i < slice_num - 1:
-            end = start + sub_seq_length
-        else:
-            end = start + remainder if remainder > 0 else sub_seq_length + start
-        # print("start" + str(start) + " end" + str(end))
-        sub_seq = sequence[start:end]
-
-        # 计算特征
-        mean = np.mean(sub_seq)
-        max_value = np.max(sub_seq)
-        min_value = np.min(sub_seq)
-        variance = np.var(sub_seq)
-
-        # 添加到特征数组
-        features_mean.append(mean)
-        features_max.append(max_value)
-        features_min.append(min_value)
-        features_var.append(variance)
-        # print("features: ", features)
-
-        # 更新起始位置
-        start = end
-
-    return np.concatenate([features_mean, features_max, features_min, features_var])
-
-def data_processing(authentications_per_person, user_names, dates, rotdir = None):
+def data_processing(authentications_per_person, user_names, dates, rotdir = os.path.join(os.getcwd(), 'data')):
     # 特征
     result_array = np.array([])
     for user in user_names:
@@ -94,8 +29,8 @@ def data_processing(authentications_per_person, user_names, dates, rotdir = None
                         # if user=='zjr':
                         continue
                 # Head
-                data_head = pd.read_csv(
-                    rotdir + "\Head_data_" + user + '-' + date + '-' + str(num + 1) + '.csv')
+                data_head = pd.read_csv(os.path.join(
+                    rotdir , "Head_data_" + user + '-' + date + '-' + str(num + 1) + '.csv'))
                 QuaternionX_data = data_head['H-QuaternionX']
                 QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
                 d1 = np.array(QuaternionX_data_smoothed)
@@ -127,8 +62,8 @@ def data_processing(authentications_per_person, user_names, dates, rotdir = None
                 v3_feat = extract_features(v3)
 
                 # Eye points
-                data_eye = pd.read_csv(
-                    rotdir + "\GazeRaw_data_" + user + '-' + date + '-' + str(num + 1) + '.csv')
+                data_eye = pd.read_csv(os.path.join(
+                    rotdir , "GazeRaw_data_" + user + '-' + date + '-' + str(num + 1) + '.csv'))
                 QuaternionX_data = data_eye['L-QuaternionX']
                 QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
                 d1_el = np.array(QuaternionX_data_smoothed)
@@ -187,7 +122,7 @@ def knn4con_binary(authentications_per_person, user_names, dates, n_neighbors=3)
     # labels = np.repeat(np.arange(num_people), authentications_per_person)
     labels = np.array([0 if user == 'zs' else 1 for user in user_names for _ in range(authentications_per_person)])
     data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
-                           rotdir="E:\Desktop\data\VRAuth")
+                           rotdir=os.path.join(os.getcwd(), 'data'))
     # 打印示例数据形状
     # print("Data shape:", data.shape)
     # print("Labels shape:", labels.shape)
@@ -232,7 +167,7 @@ def knn4con_multi(authentications_per_person, user_names, dates, n_neighbors=3):
     labels = np.repeat(np.arange(num_people), authentications_per_person)
     # labels = np.array([0 if user == 'zs' else 1 for user in user_names for _ in range(authentications_per_person)])
     data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
-                           rotdir="E:\Desktop\data\VRAuth")
+                           rotdir=os.path.join(os.getcwd(), 'data'))
     # 打印示例数据形状
     # print("Data shape:", data.shape)
     # print("Labels shape:", labels.shape)
@@ -274,7 +209,7 @@ def knn4con_multi(authentications_per_person, user_names, dates, n_neighbors=3):
 def svm4con_binary(authentications_per_person, user_names, dates, kernel="linear", C=1):
     labels = np.array([0 if user == 'zs' else 1 for user in user_names for _ in range(authentications_per_person)])
     data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
-                           rotdir="E:\Desktop\data\VRAuth")
+                           rotdir=os.path.join(os.getcwd(), 'data'))
     # 打印示例数据形状
     # print("Data shape:", data.shape)
     # print("Labels shape:", labels.shape)
@@ -317,7 +252,7 @@ def svm4con_multi(authentications_per_person, user_names, dates, kernel="linear"
     num_people = len(user_names)
     labels = np.repeat(np.arange(num_people), authentications_per_person)
     data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
-                           rotdir="E:\Desktop\data\VRAuth")
+                           rotdir=os.path.join(os.getcwd(), 'data'))
     # 打印示例数据形状
     # print("Data shape:", data.shape)
     # print("Labels shape:", labels.shape)
@@ -359,7 +294,7 @@ def svm4con_multi(authentications_per_person, user_names, dates, kernel="linear"
 def svm4con_binary_kfolds(authentications_per_person, user_names, dates, kernel="linear", C=1, n_splits=3):
     labels = np.array([0 if user == 'zs' else 1 for user in user_names for _ in range(authentications_per_person)])
     data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
-                           rotdir="E:\Desktop\data\VRAuth")
+                           rotdir=os.path.join(os.getcwd(), 'data'))
     scaler = StandardScaler()
     data_scaled = scaler.fit_transform(data)
 
@@ -413,7 +348,7 @@ def svm4con_multi_kfolds(authentications_per_person, user_names, dates, kernel="
     num_people = len(user_names)
     labels = np.repeat(np.arange(num_people), authentications_per_person)
     data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
-                           rotdir="E:\Desktop\data\VRAuth")
+                           rotdir=os.path.join(os.getcwd(), 'data'))
     scaler = StandardScaler()
     data_scaled = scaler.fit_transform(data)
 
@@ -470,7 +405,7 @@ def main():
     user_names = ['zs', 'zjr', 'gj', 'pyj']
 
     dates = ['1118']
-
+ 
     print("--------knn_binary------------")
     knn4con_binary(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates)
 
