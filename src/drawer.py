@@ -302,57 +302,77 @@ def Head_data_drawer(user_names, dates, repeat_num):
                 # 保存单个子图
                 plt.savefig(os.path.join(subfolder , axs[i,j].get_title()+ ".png"), bbox_inches='tight', dpi=300)
 
-def euler_angle_drawer_using_unity_processed_data(user_names, dates, repeat_num):
-    plot_row2=1; plot_column2=3
-    fig_2, axs_2 = plt.subplots(plot_row2, plot_column2, figsize=(20, 10))
-
-
-    for user in user_names:
-        for num in range(repeat_num):
+def unity_angle_drawer(user_names, dates, repeat_num, curve_num_per_fig=3, source='Gaze'):
+    if source=='Gaze':
+        plot_row=2; plot_column=3
+        fig_num=0
+        user_plotted=[]
+        fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 10))
+        for user in user_names:
             for date in dates:
-                data = pd.read_csv(os.path.join("unity_processed_data","GazeCalculate_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
+                for num in range(repeat_num):
+                    if fig_num == 0:
+                        fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 10))
+                    fig_num+=1
+                    user_plotted.append(str(user) + str(num+1))
+                    data = pd.read_csv(os.path.join("data/unity_processed_data","GazeCalculate_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
+                    df = pd.DataFrame(data)
+                    axs[0,0].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['L_Yaw']], label=user+str(num+1)+'_'+date)
+                    axs[0,0].set_title('L_Yaw')
+                    axs[0,1].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['L_Pitch']], label=user+str(num+1)+'_'+date)
+                    axs[0,1].set_title('L_Pitch')
+                    axs[0,2].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['L_Roll']], label=user+str(num+1)+'_'+date)
+                    axs[0,2].set_title('L_Roll')
+                    axs[1,0].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['R_Yaw']], label=user+str(num+1)+'_'+date)
+                    axs[1,0].set_title('R_Yaw')
+                    axs[1,1].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['R_Pitch']], label=user+str(num+1)+'_'+date)
+                    axs[1,1].set_title('R_Pitch')
+                    axs[1,2].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['R_Roll']], label=user+str(num+1)+'_'+date)
+                    axs[1,2].set_title('R_Roll')
 
-                # Create DataFrame
-                df = pd.DataFrame(data)
+                    if fig_num == curve_num_per_fig:
+                        for i in range(plot_row):
+                            for j in range(plot_column):
+                                axs[i, j].legend()
+                        fig.savefig(os.path.join("result/unity_angle",re.sub(r'["\'\[\],\s]', '', "unity_" + source + "_angle" + str(user_plotted) + ".png")))
+                        fig_num=0
+                        user_plotted=[]
+                        plt.clf()
+    elif source=='Head':
+        plot_row=1; plot_column=3
+        fig_num=0
+        user_plotted=[]
+        fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 10))
+        for user in user_names:
+            for date in dates:
+                for num in range(repeat_num):
+                    if fig_num == 0:
+                        fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 10))
+                    fig_num+=1
+                    user_plotted.append(str(user) + str(num+1))
+                    data = pd.read_csv(os.path.join("data/unity_processed_data","Head_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
+                    df = pd.DataFrame(data)
+                    axs[0].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['Yaw']], label=user+str(num+1)+'_'+date)
+                    axs[0].set_title('Yaw')
+                    axs[1].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['Pitch']], label=user+str(num+1)+'_'+date)
+                    axs[1].set_title('Pitch')
+                    axs[2].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['Roll']], label=user+str(num+1)+'_'+date)
+                    axs[2].set_title('Roll')
 
-                # Plotting
-                # plt.figure(figsize=(12, 6))
+                    # axs[0].plot(df['Yaw'], label=user+str(num+1)+'_'+date)
+                    # axs[0].set_title('Yaw')
+                    # axs[1].plot(df['Pitch'], label=user+str(num+1)+'_'+date)
+                    # axs[1].set_title('Pitch')
+                    # axs[2].plot(df['Roll'], label=user+str(num+1)+'_'+date)
+                    # axs[2].set_title('Roll')
 
-                axs_2[0].plot([x - y if abs(x - y) < 180 else (x - y - 360 if x - y >180 else x - y +360) for x, y in zip(df['L_Yaw'], df['R_Yaw'])], label=user+str(num+1)+'_'+date)
-                axs_2[0].set_title('L_Yaw-R_Yaw')
-                axs_2[1].plot([x - y if abs(x - y) < 180 else (x - y - 360 if x - y >180 else x - y +360) for x, y in zip(df['L_Pitch'], df['R_Pitch'])], label=user+str(num+1)+'_'+date)
-                axs_2[1].set_title('L_Pitch-R_Pitch')
-                axs_2[2].plot([x - y if abs(x - y) < 180 else (x - y - 360 if x - y >180 else x - y +360) for x, y in zip(df['L_Roll'], df['R_Roll'])], label=user+str(num+1)+'_'+date)
-                axs_2[2].set_title('L_Roll-R_Roll')
-
-
-
-                # axs_2[0, 1].plot([x  if x < 180 else x - 360 for x in df['Pitch']])
-                # axs_2[0, 1].set_title('Pitch')
-                # axs_2[0, 2].plot([x  if x < 180 else x - 360 for x in df['Roll']])
-                # axs_2[0, 2].set_title('Roll')
-                # axs_2[1, 0].plot(df['R_Yaw'])
-                # axs_2[1, 0].set_title('R_Yaw')
-                # axs_2[1, 1].plot([x  if x < 180 else x - 360 for x in df['R_Pitch']])
-                # axs_2[1, 1].set_title('R_Pitch')
-                # axs_2[1, 2].plot([x  if x < 180 else x - 360 for x in df['R_Roll']])
-                # axs_2[1, 2].set_title('R_Roll')
-
-                axs_2[0].legend()
-
-    # # Plot each column
-    # for column in df.columns:
-    #     plt.plot(df[column], label=column)
-
-    # plt.title("Euler Angles over Time")
-    # plt.xlabel("Sample Index")
-    plt.ylabel("Angle (degrees)")
-    plt.legend()
-    plt.tight_layout()
-    # fig_1.savefig(os.path.join("/unity_processed_picture",'Gaze_data_raw' + str(user_names) + '.png'))
-    fig_2.savefig(os.path.join("unity_processed_picture",'Gaze_LR_euler_angle_difference_by_unity' + str(user_names) + '.png'))
-    # plt.grid(True)
-    plt.show()
+                    if fig_num == curve_num_per_fig:
+                        for j in range(plot_column):
+                            axs[j].legend()
+                        fig.savefig(os.path.join("result/unity_angle",re.sub(r'["\'\[\],\s]', '', "unity_" + source + "_angle" + str(user_plotted) + ".png")))
+                        fig_num=0
+                        user_plotted=[]
+                        plt.clf()
 
 def difference_gaze_head_drawer(user_names, dates, repeat_num, curve_num_per_fig=3): # num从1开始
     fig_num=0
@@ -466,4 +486,4 @@ def fourier_gaze_drawer(user, date, repeat_num, slice_l, slice_r, slice_l_1, sli
             fig.savefig(os.path.join("result/unity_processed_picture",re.sub(r'["\'\[\],\s]', '',"FFT_Gaze_angle" + str(user) + str(num+1) + ".png")))
         plt.clf()
 
-difference_gaze_head_drawer(['zjr'],['1118'],6,2)
+unity_angle_drawer(['zjr'],['1118'],6,source='Head')
