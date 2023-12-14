@@ -9,8 +9,11 @@ from data_preprocess import replace_local_outliers
 from data_preprocess import smooth_data
 from data_preprocess import extract_features
 from data_preprocess import fourier_gaze
+from data_preprocess import difference_gaze_lr_euler_angle
+from data_preprocess import difference_gaze_head
+import re
 
-os.chdir(os.path.join(os.getcwd(),'data'))
+# os.chdir(os.path.join(os.getcwd(),'data'))
 
 # ---need to modify regarding your csv file name---
 user_names=["zjr","zs"]
@@ -69,6 +72,8 @@ def Gaze_drawer(user_names, dates, repeat_num):
                     # if user=='zjr':
                         continue 
 
+
+                
                 data1=pd.read_csv("GazeRaw_data_"+user+'-'+date+'-'+str(num+1)+'.csv')
                 data2=pd.read_csv("GazeCalculate_data_"+user+'-'+date+'-'+str(num+1)+'.csv')
                       
@@ -81,23 +86,6 @@ def Gaze_drawer(user_names, dates, repeat_num):
                 R_QuaternionY_raw_data=data1['R-QuaternionY']
                 R_QuaternionZ_raw_data=data1['R-QuaternionZ']
                 R_QuaternionW_raw_data=data1['R-QuaternionW']
-
-                # axs_1[0, 0].plot(L_QuaternionX_raw_data,label=user+str(num+1)+'_'+date)
-                # axs_1[0, 0].set_title('L_QuaternionX_raw_data')
-                # axs_1[0, 1].plot(L_QuaternionY_raw_data,label=user+str(num+1)+'_'+date)
-                # axs_1[0, 1].set_title('L_QuaternionY_raw_data')
-                # axs_1[0, 2].plot(L_QuaternionZ_raw_data,label=user+str(num+1)+'_'+date)
-                # axs_1[0, 2].set_title('L_QuaternionZ_raw_data')
-                # axs_1[0, 3].plot(L_QuaternionW_raw_data,label=user+str(num+1)+'_'+date)
-                # axs_1[0, 3].set_title('L_QuaternionW_raw_data')
-                # axs_1[1, 0].plot(R_QuaternionX_raw_data,label=user+str(num+1)+'_'+date)
-                # axs_1[1, 0].set_title('R_QuaternionX_raw_data')
-                # axs_1[1, 1].plot(R_QuaternionY_raw_data,label=user+str(num+1)+'_'+date)
-                # axs_1[1, 1].set_title('R_QuaternionY_raw_data')
-                # axs_1[1, 2].plot(R_QuaternionZ_raw_data,label=user+str(num+1)+'_'+date)
-                # axs_1[1, 2].set_title('R_QuaternionZ_raw_data')
-                # axs_1[1, 3].plot(R_QuaternionW_raw_data,label=user+str(num+1)+'_'+date)
-                # axs_1[1, 3].set_title('R_QuaternionW_raw_data')
 
                 L_euler_angles_df = pd.DataFrame(columns=['Yaw', 'Pitch', 'Roll'])
                 R_euler_angles_df = pd.DataFrame(columns=['Yaw', 'Pitch', 'Roll'])
@@ -133,22 +121,6 @@ def Gaze_drawer(user_names, dates, repeat_num):
                 axs_2[1, 2].plot(R_euler_angles_df['Roll'],label=user+str(num+1)+'_'+date)
                 axs_2[1, 2].set_title('R_Roll')
 
-                # axs_2[0, 0].plot(L_QuaternionX_calculated_data,label=user+str(num+1)+'_'+date)
-                # axs_2[0, 0].set_title('L_QuaternionX_calculated_data')
-                # axs_2[0, 1].plot(L_QuaternionY_calculated_data,label=user+str(num+1)+'_'+date)
-                # axs_2[0, 1].set_title('L_QuaternionY_calculated_data')
-                # axs_2[0, 2].plot(L_QuaternionZ_calculated_data,label=user+str(num+1)+'_'+date)
-                # axs_2[0, 2].set_title('L_QuaternionZ_calculated_data')
-                # axs_2[0, 3].plot(L_QuaternionW_calculated_data,label=user+str(num+1)+'_'+date)
-                # axs_2[0, 3].set_title('L_QuaternionW_calculated_data')
-                # axs_2[1, 0].plot(R_QuaternionX_calculated_data,label=user+str(num+1)+'_'+date)
-                # axs_2[1, 0].set_title('R_QuaternionX_calculated_data')
-                # axs_2[1, 1].plot(R_QuaternionY_calculated_data,label=user+str(num+1)+'_'+date)
-                # axs_2[1, 1].set_title('R_QuaternionY_calculated_data')
-                # axs_2[1, 2].plot(R_QuaternionZ_calculated_data,label=user+str(num+1)+'_'+date)
-                # axs_2[1, 2].set_title('R_QuaternionZ_calculated_data')
-                # axs_2[1, 3].plot(R_QuaternionW_calculated_data,label=user+str(num+1)+'_'+date)
-                # axs_2[1, 3].set_title('R_QuaternionW_calculated_data')
 
                 axs_1[0, 0].legend()
                 # for i in range(3):
@@ -330,10 +302,8 @@ def Head_data_drawer(user_names, dates, repeat_num):
                 # 保存单个子图
                 plt.savefig(os.path.join(subfolder , axs[i,j].get_title()+ ".png"), bbox_inches='tight', dpi=300)
 
-def euler_angle_drawer_using_unity_processed_data():
-    plot_row1=2; plot_column1=3
+def euler_angle_drawer_using_unity_processed_data(user_names, dates, repeat_num):
     plot_row2=1; plot_column2=3
-    # fig_1, axs_1 = plt.subplots(plot_row1, plot_column1, figsize=(20, 10))
     fig_2, axs_2 = plt.subplots(plot_row2, plot_column2, figsize=(20, 10))
 
 
@@ -384,9 +354,73 @@ def euler_angle_drawer_using_unity_processed_data():
     # plt.grid(True)
     plt.show()
 
-
-
-            
+def difference_gaze_head_drawer(user_names, dates, repeat_num, curve_num_per_fig=3): # num从1开始
+    fig_num=0
+    user_plotted=[]
+    plot_row=2; plot_column=3
+    fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 10))
+    for user in user_names:
+        for date in dates:
+            for num in range(repeat_num):
+                if fig_num == 0:
+                    fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 10))
+                fig_num+=1
+                user_plotted.append(str(user) + str(num+1))
+                Yaw_L = difference_gaze_head(user, date, num+1, eye='L', angle='Yaw')
+                Pitch_L = difference_gaze_head(user, date, num+1, eye='L', angle='Pitch')
+                Roll_L = difference_gaze_head(user, date, num+1, eye='L', angle='Roll')
+                Yaw_R = difference_gaze_head(user, date, num+1, eye='R', angle='Yaw')
+                Pitch_R = difference_gaze_head(user, date, num+1, eye='R', angle='Pitch')
+                Roll_R = difference_gaze_head(user, date, num+1, eye='R', angle='Roll')
+    
+                axs[0,0].plot(Yaw_L, label=user+str(num+1)+'_'+date)
+                axs[0,0].set_title('L_Gaze_Yaw-Head_Yaw')
+                axs[0,1].plot(Pitch_L, label=user+str(num+1)+'_'+date)
+                axs[0,1].set_title('L_Gaze_Pitch-Head_Pitch')
+                axs[0,2].plot(Roll_L, label=user+str(num+1)+'_'+date)
+                axs[0,2].set_title('L_Gaze_Roll-Head_Roll')
+                axs[1,0].plot(Yaw_R, label=user+str(num+1)+'_'+date)
+                axs[1,0].set_title('R_Gaze_Yaw-Head_Yaw')
+                axs[1,1].plot(Pitch_R, label=user+str(num+1)+'_'+date)
+                axs[1,1].set_title('R_Gaze_Pitch-Head_Pitch')
+                axs[1,2].plot(Roll_R, label=user+str(num+1)+'_'+date)
+                axs[1,2].set_title('R_Gaze_Roll-Head_Roll')
+                if fig_num == curve_num_per_fig:
+                    for i in range(plot_row):
+                        for j in range(plot_column):
+                            axs[i, j].legend()
+                    fig.savefig(os.path.join("result/difference_gaze_head",re.sub(r'["\'\[\],\s]', '', "difference_gaze_head" + str(user_plotted) + ".png")))
+                    fig_num=0
+                    user_plotted=[]
+                    plt.clf()
+    
+    
+def difference_gaze_lr_euler_angle_drawer(user_names, dates, repeat_num, curve_num_per_fig=3):
+    plot_row=1; plot_column=3
+    fig_num=0
+    user_plotted=[]
+    fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 7))
+    for user in user_names:
+        for date in dates:
+            for num in range(repeat_num):
+                if fig_num == 0:
+                    fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 7))
+                fig_num+=1
+                user_plotted.append(str(user) + str(num+1))
+                L_R_Yaw, L_R_Pitch, L_R_Roll = difference_gaze_lr_euler_angle(user, date, num+1)
+                axs[0].plot(L_R_Yaw, label='Gaze: '+user+str(num+1)+'_'+date)
+                axs[0].set_title('L_Yaw-R_Yaw')
+                axs[1].plot(L_R_Pitch, label='Gaze: '+user+str(num+1)+'_'+date)
+                axs[1].set_title('L_Pitch-R_Pitch')
+                axs[2].plot(L_R_Roll, label='Gaze: '+user+str(num+1)+'_'+date)
+                axs[2].set_title('L_Roll-R_Roll')
+                if fig_num == curve_num_per_fig:
+                    axs[0].legend()
+                    fig.savefig(os.path.join("result/difference_lr_angle",re.sub(r'["\'\[\],\s]', '', "difference_lr_angle" + str(user_plotted) + ".png")))
+                    fig_num=0
+                    user_plotted=[]
+                    plt.clf()
+     
 
 def fourier_gaze_drawer(user, date, repeat_num, slice_l, slice_r, slice_l_1, slice_r_1, eye='L', angle='Yaw', save_flag=True):
     plot_row=2; plot_column=3
@@ -429,7 +463,7 @@ def fourier_gaze_drawer(user, date, repeat_num, slice_l, slice_r, slice_l_1, sli
             axs[0, 0].legend()
             axs[1, 0].legend()
         if save_flag:
-            fig.savefig(os.path.join("result/unity_processed_picture","FFT_Gaze_angle['" + str(user) +' ' + str(num+1) + "'].png"))
+            fig.savefig(os.path.join("result/unity_processed_picture",re.sub(r'["\'\[\],\s]', '',"FFT_Gaze_angle" + str(user) + str(num+1) + ".png")))
         plt.clf()
 
-
+difference_gaze_head_drawer(['zjr'],['1118'],6,2)
