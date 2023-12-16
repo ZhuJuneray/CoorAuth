@@ -2,10 +2,11 @@ import numpy as np
 import pandas as pd
 from scipy.signal import savgol_filter
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
+from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold, KFold, cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, classification_report
 import os
+from sklearn.ensemble import RandomForestClassifier
 
 from sklearn.linear_model import LogisticRegression  # 导入逻辑回归模型，因为逻辑回归是二分类问题的常用模型。
 from sklearn.svm import SVC
@@ -291,7 +292,7 @@ def svm4con_multi(authentications_per_person, user_names, dates, kernel="linear"
     print(class_report)
 
 ################################################################ svm kfold 二分类
-def svm4con_binary_kfolds(authentications_per_person, user_names, dates, kernel="linear", C=1, n_splits=3):
+def svm4con_binary_kfolds(authentications_per_person, user_names, dates, kernel="linear", C=1, n_splits=5):
     labels = np.array([0 if user == 'zs' else 1 for user in user_names for _ in range(authentications_per_person)])
     data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
                            rotdir=os.path.join(os.getcwd(), 'data'))
@@ -344,7 +345,7 @@ def svm4con_binary_kfolds(authentications_per_person, user_names, dates, kernel=
     print("Average Accuracy:", average_accuracy, "\nprecision:", precisions, "\nrecalls:", recalls, "\nf1s:", f1s)
 
 ################################################################ svm kfold 多分类
-def svm4con_multi_kfolds(authentications_per_person, user_names, dates, kernel="linear", C=1, n_splits=3):
+def svm4con_multi_kfolds(authentications_per_person, user_names, dates, kernel="linear", C=1, n_splits=5):
     num_people = len(user_names)
     labels = np.repeat(np.arange(num_people), authentications_per_person)
     data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
@@ -396,6 +397,128 @@ def svm4con_multi_kfolds(authentications_per_person, user_names, dates, kernel="
     # average_f1s = np.mean(f1s)
     print("Average Accuracy:", average_accuracy, "\nprecision:", precisions, "\nrecalls:", recalls, "\nf1s:", f1s)
 
+################################################################ knn kfold 多分类
+def knn4con_multi_kfolds(authentications_per_person, user_names, dates, n_neighbors=3, n_splits=5):
+    # 生成示例数据
+    num_people = len(user_names)
+    labels = np.repeat(np.arange(num_people), authentications_per_person)
+    # labels = np.array([0 if user == 'zs' else 1 for user in user_names for _ in range(authentications_per_person)])
+    data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
+                           rotdir=os.path.join(os.getcwd(), 'data'))
+    # 打印示例数据形状
+    # print("Data shape:", data.shape)
+    # print("Labels shape:", labels.shape)
+
+    # 数据标准化
+    scaler = StandardScaler()
+    data_scaled = scaler.fit_transform(data)
+
+    for label in np.unique(labels):
+        count = np.sum(labels == label)
+        # print(f"Class {label}: {count} samples")
+    # 设置交叉验证的折叠数
+    kf = StratifiedKFold(n_splits=n_splits, shuffle=True)
+
+    # 初始化准确性列表，用于存储每个折叠的模型准确性
+    accuracies = []
+    precisions = []
+    recalls = []
+    f1s = []
+
+    for train_index, test_index in kf.split(data_scaled, labels):
+        X_train, X_test = data_scaled[train_index], data_scaled[test_index]
+        y_train, y_test = labels[train_index], labels[test_index]
+
+        knn_model = KNeighborsClassifier(n_neighbors=n_neighbors)
+        knn_model.fit(X_train, y_train)
+        y_pred = knn_model.predict(X_test)
+
+        accuracy = accuracy_score(y_test, y_pred)
+        accuracies.append(accuracy)
+
+        precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted')
+        precisions.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+    average_accuracy = np.mean(accuracies)
+    print("Average Accuracy:", average_accuracy, "\nprecision:", precisions, "\nrecalls:", recalls, "\nf1s:", f1s)
+
+    
+################################################################ knn kfold 二分类
+def knn4con_binary_kfolds(authentications_per_person, user_names, dates, n_neighbors=3, n_splits=5):
+    # 生成示例数据
+    num_people = len(user_names)
+    # labels = np.repeat(np.arange(num_people), authentications_per_person)
+    labels = np.array([0 if user == 'zs' else 1 for user in user_names for _ in range(authentications_per_person)])
+    data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
+                           rotdir=os.path.join(os.getcwd(), 'data'))
+
+    # 数据标准化
+    scaler = StandardScaler()
+    data_scaled = scaler.fit_transform(data)
+
+    for label in np.unique(labels):
+        count = np.sum(labels == label)
+        # print(f"Class {label}: {count} samples")
+    # 设置交叉验证的折叠数
+    kf = StratifiedKFold(n_splits=n_splits, shuffle=True)
+
+    # 初始化准确性列表，用于存储每个折叠的模型准确性
+    accuracies = []
+    precisions = []
+    recalls = []
+    f1s = []
+
+    for train_index, test_index in kf.split(data_scaled, labels):
+        X_train, X_test = data_scaled[train_index], data_scaled[test_index]
+        y_train, y_test = labels[train_index], labels[test_index]
+
+        knn_model = KNeighborsClassifier(n_neighbors=n_neighbors)
+        knn_model.fit(X_train, y_train)
+        y_pred = knn_model.predict(X_test)
+
+        accuracy = accuracy_score(y_test, y_pred)
+        accuracies.append(accuracy)
+
+        precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary')
+        precisions.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+    average_accuracy = np.mean(accuracies)
+    print("Average Accuracy:", average_accuracy, "\nprecision:", precisions, "\nrecalls:", recalls, "\nf1s:", f1s)
+
+def rf4con_binary_kfolds(authentications_per_person, user_names, dates, n_estimators=100, n_splits=5):
+    """
+    使用随机森林算法进行K折交叉验证。
+    
+    参数:
+    authentications_per_person -- 每个人的验证次数
+    user_names -- 用户名列表
+    dates -- 日期列表
+    n_estimators -- 随机森林中的树的数量
+    n_splits -- K折交叉验证的折数
+    """
+    # 生成示例数据
+    labels = np.array([0 if user == 'zs' else 1 for user in user_names for _ in range(authentications_per_person)])
+    data = data_processing(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates,
+                           rotdir=os.path.join(os.getcwd(), 'data'))
+
+    # 数据标准化
+    scaler = StandardScaler()
+    data_scaled = scaler.fit_transform(data)
+
+    # 创建随机森林模型
+    rf_model = RandomForestClassifier(n_estimators=n_estimators)
+
+    # 创建K折交叉验证器
+    kf = KFold(n_splits=n_splits)
+
+    # 执行K折交叉验证
+    cv_scores = cross_val_score(rf_model, data_scaled, labels, cv=kf)
+
+    # 打印交叉验证结果
+    print(f'交叉验证得分: {cv_scores}')
+    print(f'平均得分: {cv_scores.mean()}')
 
 ################################################################ main
 def main():
@@ -412,6 +535,12 @@ def main():
     print("---------knn_multi------------")
     knn4con_multi(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates)
 
+    print("---------knn_binary_kfold------------")
+    knn4con_binary_kfolds(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates)
+
+    print("---------knn_multi_kfold------------")
+    knn4con_multi_kfolds(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates)
+
     print("---------svm_binary------------")
     svm4con_binary(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates)
 
@@ -421,8 +550,11 @@ def main():
     print("----------svm_binary_kfold------------")
     svm4con_binary_kfolds(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates)
 
-    print("-----------svm_multi------------")
+    print("-----------svm_multi_kfold------------")
     svm4con_multi_kfolds(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates)
+
+    # print("---------rf_kfold------------")
+    # rf4con_binary_kfolds(authentications_per_person=authentications_per_person, user_names=user_names, dates=dates)
 
 if __name__ == "__main__":
     main()
