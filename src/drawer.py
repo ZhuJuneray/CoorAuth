@@ -133,7 +133,7 @@ def Gaze_drawer(user_names, dates, repeat_num):
     fig_2.savefig('Gaze_data_calculated' + str(user_names) + '.png')
     # plt.show()
 
-    subfolder = "single_figures"
+    subfolder = "old_single_fig"
     if not os.path.exists(subfolder):
         os.makedirs(subfolder)
     for axs in (axs_1,axs_2):
@@ -279,7 +279,7 @@ def Head_data_drawer(user_names, dates, repeat_num):
     fig_2.savefig('Head_data_drawed_quaternionXYZW.png')
     # plt.show()
 
-    subfolder = "single_figures"
+    subfolder = "old_single_fig"
     if not os.path.exists(subfolder):
         os.makedirs(subfolder)
     for axs in (axs_1,axs_2):
