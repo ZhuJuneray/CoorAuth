@@ -48,8 +48,12 @@ public class FaceExpressionsTracking : MonoBehaviour
             //Debug.Log(featureList.Count);
             foreach (FeatureTracking featureTracking in featureList)
             {
-                float weight = featureTracking.isTracking ? ovrFaceExpressions.GetWeight(featureTracking.expressions) : -1;
+                float weight = -1;
+                if (featureTracking.isTracking)
+                    ovrFaceExpressions.TryGetFaceExpressionWeight(featureTracking.expressions, out weight);
                 if (featureTracking.expressions.ToString().EndsWith("L")) wTmp = weight;
+                else if(keyValueExpressionsPairs.ContainsKey(featureTracking.expressions) && featureTracking.expressions == OVRFaceExpressions.FaceExpression.JawDrop)
+                    keyValueExpressionsPairs[featureTracking.expressions].Add(weight);
                 else
                 {
                     //Debug.Log(featureTracking.expressions.ToString() + weight + " " + wTmp);
@@ -69,6 +73,9 @@ public class FaceExpressionsTracking : MonoBehaviour
         {
 
             writer.WriteLine("FacialBlendshapes");
+            List<string> l = new();
+            for (int i = 0; i < 1000; i++) l.Add(i.ToString());
+            writer.WriteLine(string.Join(", ", l));
             // 遍历字典并写入每一行
             foreach (var kvp in keyValueExpressionsPairs)
             {

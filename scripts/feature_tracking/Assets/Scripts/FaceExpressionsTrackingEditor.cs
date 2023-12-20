@@ -60,5 +60,14 @@ public class FaceExpressionsTrackingEditor : Editor
         new FeatureTracking(OVRFaceExpressions.FaceExpression.EyesClosedR),
         new FeatureTracking(OVRFaceExpressions.FaceExpression.UpperLidRaiserL),
         new FeatureTracking(OVRFaceExpressions.FaceExpression.UpperLidRaiserR),
+        new FeatureTracking(OVRFaceExpressions.FaceExpression.EyesLookUpL),
+        new FeatureTracking(OVRFaceExpressions.FaceExpression.EyesLookUpR),
+        new FeatureTracking(OVRFaceExpressions.FaceExpression.BrowLowererL),
+        new FeatureTracking(OVRFaceExpressions.FaceExpression.BrowLowererR),
+        new FeatureTracking(OVRFaceExpressions.FaceExpression.OuterBrowRaiserL),
+        new FeatureTracking(OVRFaceExpressions.FaceExpression.OuterBrowRaiserR),
+        new FeatureTracking(OVRFaceExpressions.FaceExpression.InnerBrowRaiserL),
+        new FeatureTracking(OVRFaceExpressions.FaceExpression.InnerBrowRaiserR),
+        //new FeatureTracking(OVRFaceExpressions.FaceExpression.JawDrop),
     };
 }

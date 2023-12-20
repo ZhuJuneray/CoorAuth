@@ -35,7 +35,6 @@ public class HeadFeaturesTracking : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Begin = trackingScript.Begin; //更新
         foreach (var b in skeleton.Bones)
         {
             if (b.Id == OVRSkeleton.BoneId.Body_Head)
@@ -48,6 +47,19 @@ public class HeadFeaturesTracking : MonoBehaviour
                 transNeck = b.Transform;
             }
         }
+
+        Begin = trackingScript.Begin;
+        Name = trackingScript.Name + "-" + trackingScript.indexOfSize.ToString() + "-" + trackingScript.indexOfPIN.ToString()
+            + "-" + trackingScript.time.ToString();
+
+        if (!Begin && headFeatures.Count > 5) // 有数据
+        {
+            Debug.Log("name" + Name);
+            FileInput();
+            // 清空
+            headFeatures.Clear();
+            neckFeatures.Clear();
+        }
     }
 
     private void FixedUpdate()
@@ -56,14 +68,29 @@ public class HeadFeaturesTracking : MonoBehaviour
         {
             InterestedFeature h = new InterestedFeature(transHead.position, transHead.rotation);
             headFeatures.Add(h);
+            //Quaternion rot;
+            //Vector3 pos;
+            //// 真实世界头的参数
+            //OVRNodeStateProperties.GetNodeStatePropertyVector3(UnityEngine.XR.XRNode.Head,
+            //        NodeStatePropertyType.Position, OVRPlugin.Node.Head, OVRPlugin.Step.Render, out pos);
+            //OVRNodeStateProperties.GetNodeStatePropertyQuaternion(UnityEngine.XR.XRNode.Head,
+            //        NodeStatePropertyType.Orientation, OVRPlugin.Node.Head, OVRPlugin.Step.Render, out rot);
+            //Debug.Log("trans pos" + transHead.position.ToString() + "rot" + transHead.rotation.eulerAngles + "phy pos" + pos.ToString()
+            //    + "rot" + rot.eulerAngles);
             h = new InterestedFeature(transNeck.position, transNeck.rotation);
             neckFeatures.Add(h);
         }
     }
     private void OnDestroy()
     {
-        pathHead = @"E:\Desktop\data\VRAuth\Head_data_" + Name + ".csv";
-        pathNeck = @"E:\Desktop\data\VRAuth\Neck_data_" + Name + ".csv";
+        //FileInput();
+
+    }
+
+    public void FileInput()
+    {
+        pathHead = @"E:\Desktop\data\VRAuth1\Head_data_" + Name + ".csv";
+        pathNeck = @"E:\Desktop\data\VRAuth1\Neck_data_" + Name + ".csv";
         using (StreamWriter writer = new StreamWriter(pathHead))
         {
             // 写入CSV文件的标题行
@@ -89,8 +116,8 @@ public class HeadFeaturesTracking : MonoBehaviour
 
             Debug.Log("Finish Writing NeckFeatures");
         }
-
     }
+
 }
 
 public class InterestedFeature

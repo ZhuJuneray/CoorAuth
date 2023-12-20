@@ -36,7 +36,17 @@ public class GazeFeaturesTracking : MonoBehaviour
     private void Update()
     {
         Begin = trackingScript.Begin;
-        
+        Name = trackingScript.Name + "-" + trackingScript.indexOfSize.ToString() + "-" + trackingScript.indexOfPIN.ToString()
+            + "-" + trackingScript.time.ToString();
+        if (!Begin && gazeFeaturesCalculate.Count > 5) // 有数据
+        {
+            Debug.Log("name" + Name);
+            FileInput();
+            // 清空
+            gazeFeaturesCalculate.Clear();
+            gazeFeaturesRaw.Clear();
+        }
+
     }
     private void FixedUpdate()
     {
@@ -62,11 +72,17 @@ public class GazeFeaturesTracking : MonoBehaviour
             g = new GazeFeatures(poseLeft.orientation, poseRight.orientation);
             gazeFeaturesRaw.Add(g);
         }
+        
     }
 
     private void OnDestroy()
     {
-        pathStr = @"E:\Desktop\data\VRAuth\GazeCalculate_data_" + Name + ".csv";
+        //FileInput();
+    }
+
+    public void FileInput()
+    {
+        pathStr = @"E:\Desktop\data\VRAuth1\GazeCalculate_data_" + Name + ".csv";
         using (StreamWriter writer = new StreamWriter(pathStr))
         {
             // 写入CSV文件的标题行
@@ -79,7 +95,7 @@ public class GazeFeaturesTracking : MonoBehaviour
             Debug.Log("Finish Writing GazeFeaturesCal");
         }
 
-        pathStr = @"E:\Desktop\data\VRAuth\GazeRaw_data_" + Name + ".csv";
+        pathStr = @"E:\Desktop\data\VRAuth1\GazeRaw_data_" + Name + ".csv";
         using (StreamWriter writer = new StreamWriter(pathStr))
         {
             // 写入CSV文件的标题行
