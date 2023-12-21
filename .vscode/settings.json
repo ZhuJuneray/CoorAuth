@@ -1,0 +1,4 @@
+{
+    "dotnet.preferCSharpExtension": true,
+    "python.REPL.enableREPLSmartSend": false
+}

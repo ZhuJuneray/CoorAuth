@@ -1,0 +1,39 @@
+{
+    "data": [
+        {
+            "studytype": "study1",
+            "names": 1,
+            "date": "1221"
+        },
+        {
+            "studytype": "study1",
+            "names": 2,
+            "date": "1221"
+        },
+        {
+            "studytype": "study1",
+            "names": 3,
+            "date": "1221"
+        },
+        {
+            "studytype": "study1",
+            "names": 4,
+            "date": "1221"
+        },
+        {
+            "studytype": "study1",
+            "names": 5,
+            "date": "1221"
+        },
+        {
+            "studytype": "study1",
+            "names": 6,
+            "date": "1221"
+        },
+        {
+            "studytype": "study1",
+            "names": 7,
+            "date": "1221"
+        }
+    ]
+}

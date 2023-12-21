@@ -99,7 +99,7 @@ def unity_angle_drawer(user_names, dates, repeat_num, curve_num_per_fig=3, sourc
                         fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 10))
                     fig_num+=1
                     user_plotted.append(str(user) + str(num+1))
-                    data = pd.read_csv(os.path.join("data/unity_processed_data","GazeCalculate_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
+                    data = pd.read_csv(os.path.join("data","GazeCalculate_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
                     df = pd.DataFrame(data)
                     axs[0,0].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['L_Yaw']], label=user+str(num+1)+'_'+date)
                     axs[0,0].set_title('L_Yaw')
@@ -134,7 +134,7 @@ def unity_angle_drawer(user_names, dates, repeat_num, curve_num_per_fig=3, sourc
                         fig, axs = plt.subplots(plot_row, plot_column, figsize=(20, 10))
                     fig_num+=1
                     user_plotted.append(str(user) + str(num+1))
-                    data = pd.read_csv(os.path.join("data/unity_processed_data","Head_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
+                    data = pd.read_csv(os.path.join("data","Head_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
                     df = pd.DataFrame(data)
                     axs[0].plot([x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in df['Yaw']], label=user+str(num+1)+'_'+date)
                     axs[0].set_title('Yaw')
@@ -269,4 +269,4 @@ def fourier_gaze_drawer(user, date, repeat_num, slice_l, slice_r, slice_l_1, sli
         plt.clf()
 
 
-Head_data_drawer(['test-zjr'],['1215'],12,curve_num_per_fig=12)
+unity_angle_drawer(['mlwk','mljq','mhyr','mhyl','mgx'],['1217'],7,7)

@@ -4,6 +4,8 @@ import numpy as np
 from scipy.signal import savgol_filter
 from cycler import cycler
 import os
+import json
+import itertools
 
 def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
     """
@@ -89,7 +91,7 @@ def extract_features(sequence, slice_num=10):  # 把序列切成slice_num段，�
     return np.concatenate([features_mean, features_max, features_min, features_var])
 
 def difference_gaze_lr_euler_angle(user, date, num): # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
-    data = pd.read_csv(os.path.join(os.getcwd(), "data/unity_processed_data", "GazeCalculate_data_" + user + "-" + date + "-" + str(num) + "_unity_processed.csv"))
+    data = pd.read_csv(os.path.join(os.getcwd(), "data", "GazeCalculate_data_" + user + "-" + date + "-" + str(num) + "_unity_processed.csv"))
     # Create DataFrame
     df = pd.DataFrame(data)
 
@@ -98,14 +100,15 @@ def difference_gaze_lr_euler_angle(user, date, num): # 读取用户特定日期�
     L_R_Roll = [x - y if abs(x - y) < 180 else (x - y - 360 if x - y >180 else x - y +360) for x, y in zip(df['L_Roll'], df['R_Roll'])]
     return L_R_Yaw, L_R_Pitch, L_R_Roll
 
-def difference_gaze_head(user, date, num, eye='L', angle='Yaw'):# 读取用户特定日期和序号的视线数据和头部数据，以list返回视线和头部偏航角度之间的差异, num从1开始, eye='L' or 'R', angle='Yaw' or 'Pitch' or 'Roll'
+def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir = None):# 读取用户特定日期和序号的视线数据和头部数据，以list返回视线和头部偏航角度之间的差异, num从1开始, eye='L' or 'R', angle='Yaw' or 'Pitch' or 'Roll'
     if eye not in ['L', 'R']:
         raise ValueError("eye must be 'L' or 'R'")
     if angle not in ['Yaw', 'Pitch', 'Roll']:
         raise ValueError("angle must be 'Yaw' or 'Pitch' or 'Roll'")
     # 数据存储在unity_processed_data目录下
-    data1 = pd.read_csv(os.path.join("data/unity_processed_data", "GazeCalculate_data_" + user + "-" + date + "-" + str(num) + "_unity_processed.csv"))
-    data2 = pd.read_csv(os.path.join("data/unity_processed_data", "Head_data_" + user + "-" + date + "-" + str(num) + "_unity_processed.csv"))
+   
+    data1 = pd.read_csv(os.path.join(rotdir, f"GazeCalculate_data _{member}-{str(size)}-{str(pin)}-{str(num+1)}._unity_processedcsv"))
+    data2 = pd.read_csv(os.path.join(rotdir, f"Head_data _{member}-{str(size)}-{str(pin)}-{str(num+1)}._unity_processedcsv"))
 
     # 将读取的数据转换为DataFrame
     df1 = pd.DataFrame(data1)
@@ -127,7 +130,7 @@ def fourier_gaze(user, date, num, eye='L', angle='Yaw'): # 读取用户特定日
         raise ValueError("eye must be 'L' or 'R'")
     if angle not in ['Yaw', 'Pitch', 'Roll']:
         raise ValueError("angle must be 'Yaw' or 'Pitch' or 'Roll'")
-    data1 = pd.read_csv(os.path.join("data/unity_processed_data","GazeCalculate_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
+    data1 = pd.read_csv(os.path.join("data","GazeCalculate_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
     df1 = pd.DataFrame(data1)
 
 
@@ -210,3 +213,76 @@ def unity_quaternion_to_euler(x, y, z, w): # result is different from Unity, idk
     yaw = np.arctan2(siny_cosp, cosy_cosp)
 
     return np.degrees([yaw, pitch, roll])  # Convert to degrees
+
+def read_data_name_from_json(filepath):
+    with open(filepath, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
+    train_set=[]
+    train_set_positive_label = []
+    train_set_negative_label = []
+    test_set = []
+
+    # 处理 train_set
+    if data["scene"] and data["train_set_scene"]:
+            raise Exception("scene and train_set_scene can't be both set")
+    for item in data['train_set']['positive_label']:
+        names = [item['names']] if isinstance(item['names'], str) else item['names']
+        dates = [item['date']] if isinstance(item['date'], str) else item['date']
+        range_ = item['range'] if item['range'] else 'all'
+        namess=[]
+        if data["scene"]:
+            for name in names:
+                namess.append(data["scene"]+name)
+        elif data["train_set_scene"]:
+            for name in names:
+                namess.append(data["train_set_scene"]+name)
+        else:
+            namess=names
+        for name, date in itertools.product(namess, dates):
+            train_set.append([name, date, range_])
+            train_set_positive_label.append([name, date, range_])
+    
+    for item in data['train_set']['negative_label']:
+        names = [item['names']] if isinstance(item['names'], str) else item['names']
+        dates = [item['date']] if isinstance(item['date'], str) else item['date']
+        range_ = item['range'] if item['range'] else 'all'
+        namess=[]
+        if data["scene"]:
+            for name in names:
+                namess.append(data["scene"]+name)
+        elif data["train_set_scene"]:
+            for name in names:
+                namess.append(data["train_set_scene"]+name)
+        else:
+            namess=names
+        for name, date in itertools.product(namess, dates):
+            train_set.append([name, date, range_])
+            train_set_negative_label.append([name, date, range_])
+
+    # 处理 test_set
+    if data["scene"] and data["test_set_scene"]:
+            raise Exception("scene and test_set_scene can't be both set")
+    for item in data['test_set']:
+        names = [item['names']] if isinstance(item['names'], str) else item['names']
+        dates = [item['date']] if isinstance(item['date'], str) else item['date']
+        range_ = item['range'] if item['range'] else 'all'
+        namess=[]
+        if data["scene"]:
+            for name in names:
+                namess.append(data["scene"]+name)
+        elif data["test_set_scene"]:
+            for name in names:
+                namess.append(data["test_set_scene"]+name)
+        else:
+            namess=names
+        for name, date in itertools.product(namess, dates):
+            test_set.append([name, date, range_])
+
+    return train_set, train_set_positive_label, train_set_negative_label, test_set
+
+def range_to_int_value(range_str):
+        def range_to_int_start_end(range_str, value='start'):
+            values = list(map(int, range_str.split('-')))
+            return values[0] if value == 'start' else values[1]
+        return range_to_int_start_end(range_str, 'end')-range_to_int_start_end(range_str, 'start')
