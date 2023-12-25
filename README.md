@@ -2,7 +2,6 @@
 
 (Same as the Challenging Cup's project introduction)
 
-
 **[Title] VisionSpin: Efficient and Reliable Interaction Access Technology Based on Coordinated Head and Eye Movements**
 
 **[Keywords]** Virtual Reality, Interaction Activation, Identity Authentication, Artificial Intelligence
@@ -12,7 +11,7 @@ As virtual reality technology and embodied intelligence continue to develop and 
 
 Facing this challenge, the project innovatively utilizes the human capability to control eye and head movements. By exploring the interaction space of combined head-eye movements, the project designs natural and efficient actions for identity authentication and interaction activation, aiming to solve the purpose of efficient and reliable entry into the virtual reality world and switching interaction targets.
 
-![1701070837350](image/README/1701070837350.png)
+![1701070837350](fig/README/1701070837350.png)
 
 Specifically, the innovations of this project include:
 
