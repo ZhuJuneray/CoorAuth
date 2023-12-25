@@ -7,6 +7,12 @@ import os
 import json
 import itertools
 
+def read_data_name_from_json(filepath):
+        with open(filepath, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        data_list = [f"{item['studytype']}-{item['names']}-{item['date']}" for item in data['data']]
+        return data_list
+
 def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
     """
     使用滑动窗口方法替换一维数组中的局部离群值。
@@ -100,15 +106,15 @@ def difference_gaze_lr_euler_angle(user, date, num): # 读取用户特定日期�
     L_R_Roll = [x - y if abs(x - y) < 180 else (x - y - 360 if x - y >180 else x - y +360) for x, y in zip(df['L_Roll'], df['R_Roll'])]
     return L_R_Yaw, L_R_Pitch, L_R_Roll
 
-def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir = None):# 读取用户特定日期和序号的视线数据和头部数据，以list返回视线和头部偏航角度之间的差异, num从1开始, eye='L' or 'R', angle='Yaw' or 'Pitch' or 'Roll'
+def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir = ""):# 读取用户特定日期和序号的视线数据和头部数据，以list返回视线和头部偏航角度之间的差异, num从1开始, eye='L' or 'R', angle='Yaw' or 'Pitch' or 'Roll'
     if eye not in ['L', 'R']:
         raise ValueError("eye must be 'L' or 'R'")
     if angle not in ['Yaw', 'Pitch', 'Roll']:
         raise ValueError("angle must be 'Yaw' or 'Pitch' or 'Roll'")
     # 数据存储在unity_processed_data目录下
-   
-    data1 = pd.read_csv(os.path.join(rotdir, f"GazeCalculate_data _{member}-{str(size)}-{str(pin)}-{str(num+1)}._unity_processedcsv"))
-    data2 = pd.read_csv(os.path.join(rotdir, f"Head_data _{member}-{str(size)}-{str(pin)}-{str(num+1)}._unity_processedcsv"))
+    
+    data1 = pd.read_csv(os.path.join(rotdir, f"data{member.split('-')[2]}/P{member.split('-')[1]}/GazeCalculate_data_{member.split('-')[0]}-{member.split('-')[1]}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num)}_unity_processed.csv"))
+    data2 = pd.read_csv(os.path.join(rotdir, f"data{member.split('-')[2]}/P{member.split('-')[1]}/Head_data_{member.split('-')[0]}-{member.split('-')[1]}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num)}_unity_processed.csv"))
 
     # 将读取的数据转换为DataFrame
     df1 = pd.DataFrame(data1)
@@ -286,3 +292,54 @@ def range_to_int_value(range_str):
             values = list(map(int, range_str.split('-')))
             return values[0] if value == 'start' else values[1]
         return range_to_int_start_end(range_str, 'end')-range_to_int_start_end(range_str, 'start')
+
+def google_sheet_to_json(studytype = "study1", credential_path = "src/credentials.json", google_sheet_name = "被试招募", json_save_path= "src/data.json"):
+    import gspread
+    def map_names_to_numbers(names):
+        name_to_number = {}
+        number_list = []
+        counter = 1
+        for name in names:
+            if name not in name_to_number:
+                name_to_number[name] = counter
+                counter += 1
+            number_list.append(name_to_number[name])
+        return number_list
+
+    client = gspread.service_account(filename=credential_path)
+    spreadsheet = client.open(google_sheet_name)
+    sheet = spreadsheet.sheet1
+    # Fetch the first column values
+    first_column = sheet.col_values(1)
+    # for participant in range(count_study):
+    first_occurrence = None
+    last_occurrence = None
+
+    for i, value in enumerate(first_column, start=1):  # start=1 to start counting from row 1
+        if value == studytype:
+            last_occurrence = i
+            if first_occurrence is None:
+                first_occurrence = i
+
+    data_range = f"D{first_occurrence}:D{last_occurrence}"
+    column_data = sheet.range(data_range)
+    names = [cell.value for cell in column_data if cell.value.strip()]
+    numbered_list = map_names_to_numbers(names)
+
+    data_list = []
+
+    for i in range(last_occurrence-first_occurrence+1):  # Adjust the range as needed
+        # Generate or collect your data
+        data_item = {"studytype" : studytype, "names": numbered_list[i], "date": sheet.col_values(2)[i+first_occurrence-1]}
+        # Append the data item to the list
+        data_list.append(data_item)
+
+    # Wrap the list in a dictionary under the key 'data'
+    data_to_write = {"data": data_list, "latter_auth": []}
+
+    # Write the data to a JSON file
+    with open(json_save_path, 'w', encoding='utf-8') as file:
+        json.dump(data_to_write, file, ensure_ascii=False, indent=4)
+
+
+# google_sheet_to_json()

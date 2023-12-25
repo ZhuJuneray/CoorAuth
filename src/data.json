@@ -1,10 +1,6 @@
 {
     "data": [
-        {
-            "studytype": "study1",
-            "names": 1,
-            "date": "1221"
-        },
+
         {
             "studytype": "study1",
             "names": 2,
@@ -34,6 +30,39 @@
             "studytype": "study1",
             "names": 7,
             "date": "1221"
+        },
+
+        {
+            "studytype": "study1",
+            "names": 9,
+            "date": "1222"
+        },
+        {
+            "studytype": "study1",
+            "names": 10,
+            "date": "1222"
+        },
+        {
+            "studytype": "study1",
+            "names": 11,
+            "date": "1222"
+        },
+        {
+            "studytype": "study1",
+            "names": 12,
+            "date": "1222"
+        },
+        {
+            "studytype": "study1",
+            "names": 13,
+            "date": "1222"
+        },
+
+        {
+            "studytype": "study1",
+            "names": 15,
+            "date": "1222"
         }
-    ]
+    ],
+    "latter_auth": []
 }
