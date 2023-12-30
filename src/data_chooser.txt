@@ -1,6 +1,0 @@
-Data for train set: Name(s) Date(s) (range)
-zjr 1218 1-7
-zhao 1218
-
-Data for test set
-zhao 1219

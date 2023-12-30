@@ -542,7 +542,7 @@ def difference_gaze_head_size_pin_drawer(studytype_users_dates, size_num_study1,
         draw_charts(stats[stat_name], stat_name, size_num_study1, pin_num, f"{stat_name}_difference_gaze_head")
 
 
-   
+
 
 def head_size_pin_drawer(studytype_users_dates, size_num_study1, pin_num, authentications_per_person, rotdir):
     # 初始化字典来储存数据
@@ -610,78 +610,8 @@ def head_size_pin_drawer(studytype_users_dates, size_num_study1, pin_num, authen
     for stat_name in stats_functions:
         draw_charts(stats[stat_name], stat_name, size_num_study1, pin_num, f"{stat_name}_head")
         
-# def head_size_drawer(studytype_users_dates, size_num_study1, pin_num, authentications_per_person, rotdir):
-#     # 初始化字典来储存数据
-#     data = {position_angle: {(size): [] for size in size_num_study1} 
-#             for position_angle in ['H-Vector3X', 'H-Vector3Y', 'H-Vector3Z', 'Yaw', 'Pitch', 'Roll']}
-
-#     # 收集数据
-#     for member in studytype_users_dates:
-#         if member.split('-')[0] == 'study1':
-#             for size in size_num_study1:
-#                 for pin in pin_num:
-#                     for num in range(authentications_per_person):
-#                         for position_angle in ['H-Vector3X', 'H-Vector3Y', 'H-Vector3Z', 'Yaw', 'Pitch', 'Roll']:
-#                             if position_angle in ['H-Vector3X', 'H-Vector3Y', 'H-Vector3Z']:
-#                                 position_angle_data = pd.read_csv(os.path.join(rotdir, f"data{member.split('-')[2]}/P{member.split('-')[1]}/Head_data_{member.split('-')[0]}-{member.split('-')[1]}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"))[position_angle]
-#                                 data[position_angle][(size)].extend(position_angle_data)
-#                             elif position_angle in ['Yaw', 'Pitch', 'Roll']:
-#                                 position_angle_data = pd.read_csv(os.path.join(rotdir, f"data{member.split('-')[2]}/P{member.split('-')[1]}/Head_data_{member.split('-')[0]}-{member.split('-')[1]}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}_unity_processed.csv"))[position_angle]
-#                                 data[position_angle][(size)].extend(position_angle_data)
-#     # 计算统计指标
-#     stats_functions = {
-#         'mean': np.nanmean,
-#         'max': np.nanmax,
-#         'min': np.nanmin,
-#         'var': np.nanvar,
-#         'median': np.nanmedian,
-#         'rms': lambda x: np.sqrt(np.nanmean(np.square(x)))  # Root Mean Square
-#     }
-    
-#     # Applying statistical functions to the data
-#     stats = {stat: {angle: {key: func(values) for key, values in data_angle.items()} 
-#                     for angle, data_angle in data.items()}
-#              for stat, func in stats_functions.items()}
-
-#     # 绘制条形图
-#     def draw_charts(stat_data, stat_name, size_num_study1, folder_name):
-#     # Create the results folder if it doesn't exist
-#         if not os.path.exists(f"result/{folder_name}"):
-#             os.makedirs(f"result/{folder_name}")
-        
-#         # Loop through each angle in your statistics data
-#         for angle in stat_data:
-#             fig, ax = plt.subplots(figsize=(10, 6))  # Create a figure and an axes
-            
-#             # Prepare the x-values for the bar chart, typically the size or category
-#             x_values = list(range(len(size_num_study1)))
-            
-#             # Prepare the y-values, which are the statistics you're visualizing
-#             y_values = [stat_data[angle].get(size, 0) for size in size_num_study1]
-            
-#             # Create a bar chart
-#             ax.bar(x_values, y_values, tick_label=size_num_study1)
-            
-#             # Set the title and labels
-#             ax.set_title(f'{stat_name.capitalize()} of Difference-{angle}')
-#             ax.set_xlabel('Size')
-#             ax.set_ylabel(f'{stat_name.capitalize()} Value')
-            
-#             # Optionally, add a legend or make other customizations here
-            
-#             # Tight layout often improves the spacing between subplots
-#             plt.tight_layout()
-            
-#             # Save the figure
-#             fig.savefig(os.path.join(f"result/{folder_name}", re.sub(r'["\'\[\],\s]', '', f"{stat_name}_head_size_{angle}.png")))
-            
-#             # Close the plot to free up memory
-#             plt.close(fig)
-#         # 绘制和保存所有统计图表
-#     for stat_name in stats_functions:
-#         draw_charts(stats[stat_name], stat_name, size_num_study1, f"{stat_name}_head_size")
  
-def head_size_drawer(studytype_users_dates, size_num_study1, pin_num, authentications_per_person, rotdir):
+def head_statistic_data_size_drawer(studytype_users_dates, size_num_study1, pin_num, authentications_per_person, rotdir):
     # Initialize dictionary to store raw data
     raw_data = {position_angle: {(user, size, pin): []
                                  for user in studytype_users_dates for size in size_num_study1 for pin in pin_num}
@@ -749,103 +679,34 @@ stats_functions = {
     'rms': lambda x: np.sqrt(np.nanmean(np.square(x)))  # Root Mean Square
 }
 
-def head_user_size_pin_num_drawer(studytype_users_dates, size_num = [1,2,3,4], pin_num= [1,2,3,4], authentications_per_person = 6, rotdir = os.path.join(os.getcwd(),'data'), eye='L'):
-    raw_data = {position_angle: {(user, size, pin): []
-                                for user in studytype_users_dates for size in size_num for pin in pin_num}
-                for position_angle in ['H-Vector3X', 'H-Vector3Y', 'H-Vector3Z', 'Yaw', 'Pitch', 'Roll']}
-
-    # Collect data and save time-series plots
-    for member in studytype_users_dates:
-        user = member.split('-')[1]  # Adjust according to how user is identified in your data
-        for size in size_num:
-            for pin in pin_num:
-                for num in range(authentications_per_person):
-                    for position_angle in ['H-Vector3X', 'H-Vector3Y', 'H-Vector3Z', 'Yaw', 'Pitch', 'Roll']:
-                        # Define the path to the data file
-                        filename = f"Head_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
-                        if position_angle in ['Yaw', 'Pitch', 'Roll']:
-                            file_path = os.path.join(rotdir, f"VRAuthStudy1Angle-{member.split('-')[2]}/P{user}/{filename}")
-                        if position_angle in ['H-Vector3X', 'H-Vector3Y', 'H-Vector3Z']:
-                            file_path = os.path.join(rotdir, f"VRAuthStudy1-{member.split('-')[2]}/P{user}/{filename}")
-                        
-                        # Load data
-                        position_angle_raw_data = pd.read_csv(file_path)[position_angle]
-                        if position_angle in ['Yaw', 'Pitch', 'Roll']:
-                            position_angle_data = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in position_angle_raw_data]
-                        if position_angle in ['H-Vector3X', 'H-Vector3Y', 'H-Vector3Z']:
-                            position_angle_data = position_angle_raw_data
-                        raw_data[position_angle][(member, size, pin)].extend(position_angle_data)
-                        
-                        # Plotting each time-series
-                        fig, ax = plt.subplots()
-                        ax.plot(position_angle_data)
-                        ax.set_title(f"Head {position_angle} Time-Series for User {user}, Size {size}, Pin {pin}, Auth number {num+1}")
-                        ax.set_xlabel("Time")
-                        ax.set_ylabel(position_angle)
-                        
-                        # Save plot
-                        plot_folder = os.path.join("result/", "timeseries_plots", f"{member.split('-')[0]}", "head")
-                        if not os.path.exists(plot_folder):
-                            os.makedirs(plot_folder)
-                        plot_filename = f"Head_{position_angle}_User{user}_Size{size}_Pin{pin}_Num{num+1}.png"
-                        fig.savefig(os.path.join(plot_folder, plot_filename))
-                        plt.close(fig)
 
 
-# def eye_user_size_pin_num_drawer(studytype_users_dates, size_num = [1,2,3,4], pin_num= [1,2,3,4], authentications_per_person = 6, rotdir = os.path.join(os.getcwd(),'data'), eye='L', preprocess_func = None):
 
-#     raw_data = {position_angle: {(user, size, pin): []
-#                                 for user in studytype_users_dates for size in size_num for pin in pin_num}
-#                 for position_angle in ['L_Yaw', 'L_Pitch', 'L_Roll', 'R_Yaw', 'R_Pitch', 'R_Roll']}
 
-#     # Collect data and save time-series plots
-#     for member in studytype_users_dates:
-#         user = member.split('-')[1]  # Adjust according to how user is identified in your data
-#         for size in size_num:
-#             for pin in pin_num:
-#                 for num in range(authentications_per_person):
-#                     for position_angle in ['L_Yaw', 'L_Pitch', 'L_Roll', 'R_Yaw', 'R_Pitch', 'R_Roll']:
-#                         # Define the path to the data file
-#                         filename = f"GazeRaw_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
-#                         file_path = os.path.join(rotdir, f"VRAuthStudy1Angle-{member.split('-')[2]}/P{user}/{filename}")
-                        
-#                         # Load data
-#                         position_angle_raw_data = pd.read_csv(file_path)[position_angle]
-#                         position_angle_data = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in position_angle_raw_data]
-#                         raw_data[position_angle][(member, size, pin)].extend(position_angle_data)
-                        
-#                         # Plotting each time-series
-#                         fig, ax = plt.subplots()
-#                         if preprocess_func:
-#                             ax.plot(preprocess_func(position_angle_data))
-#                             ax.set_title(f"{position_angle} Time-Series for {member.split('-')[0]} User {user}, Size {size}, Pin {pin}, Auth number {num+1} {preprocess_func.__name__}")
-#                         else:
-#                             ax.set_title(f"{position_angle} Time-Series for {member.split('-')[0]} User {user}, Size {size}, Pin {pin}, Auth number {num+1}")
-#                         ax.set_xlabel("Time")
-#                         ax.set_ylabel(position_angle)
-                        
-#                         # Save plot
-#                         plot_folder = os.path.join("result/", "timeseries_plots", f"{member.split('-')[0]}", "gaze")
-#                         if not os.path.exists(plot_folder):
-#                             os.makedirs(plot_folder)
-                        
-#                         if preprocess_func:
-#                             plot_filename = f"GazeRaw_{position_angle}_{member.split('-')[0]}_User{user}_Size{size}_Pin{pin}_Num{num+1} {preprocess_func.__name__}.png"
-#                         else:
-#                             plot_filename = f"GazeRaw_{position_angle}_{member.split('-')[0]}_User{user}_Size{size}_Pin{pin}_Num{num+1}.png"
-#                         fig.savefig(os.path.join(plot_folder, plot_filename))
-#                         plt.close(fig)
-    
-# def eye_size_drawer():
+
                         
 
 
-class Drawer:
-    def __init__(self, filepath, size_list, pin_list):
+
+
+def replace_outlier_and_smooth_data(data):
+    data = replace_local_outliers(data)
+    data = smooth_data(data, window_parameter= 5)
+    return data
+
+
+
+
+
+
+
+
+class Drawer: # 画json里的数据的图
+    def __init__(self, filepath, size_list, pin_list, rotdir = os.path.join(os.getcwd(), 'data')):
         self.filepath = filepath
         self.size_list = size_list
         self.pin_list = pin_list
-        self.rotdir = os.path.join(os.getcwd(), 'data/')
+        self.rotdir = rotdir
         self.studytype_users_dates = self.read_data_name_from_json()
 
     def read_data_name_from_json(self):
@@ -853,10 +714,11 @@ class Drawer:
             data = json.load(file)
         data_list = [f"{item['studytype']}-{item['names']}-{item['date']}" for item in data['data']]
         return data_list
+    
+
 
     def calculate_times(self):
         times = defaultdict(lambda: defaultdict(list))
-        # Your existing logic to populate 'times'
         for member in self.studytype_users_dates:
             studytype, user, date = member.split('-')
             for size in self.size_list:
@@ -929,10 +791,129 @@ class Drawer:
         plt.title(self.studytype_users_dates[0].split('-')[0] + ' Average Time for Different Sizes and Pins')
         plt.xticks(size_indices + total_bar_width / 2 - bar_width / 2, self.size_list)  # Center the x-ticks
 
-
         plt.savefig(os.path.join(self._create_result_folder("average_time_for_different_sizes_and_pins"),
                                  self.studytype_users_dates[0].split('-')[0] + "average_time_for_different_sizes_and_pins.png"))
         plt.close()
+
+    # Method to plot eye data
+    def eye_user_size_pin_num_drawer(self, authentications_per_person=6, rotdir=None, eye='L', preprocess_func=None):
+        # Define angles for left and right eyes
+        position_angles = {
+            'L': ['L_Yaw', 'L_Pitch', 'L_Roll'],
+            'R': ['R_Yaw', 'R_Pitch', 'R_Roll']
+        }
+        # Initialize raw data structure
+        raw_data = {position_angle: {(user, size, pin): []
+                                    for user in self.studytype_users_dates for size in self.size_list for pin in self.pin_list}
+                    for position_angle in position_angles[eye]}
+
+        # Collect data
+        for member in self.studytype_users_dates:
+            user = member.split('-')[1]  # Adjust according to how user is identified in your data
+            for size in self.size_list:
+                for pin in self.pin_list:
+                    for num in range(authentications_per_person):
+                        # Create a figure with subplots for Yaw, Pitch, and Roll
+                        fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+                        for i, position_angle in enumerate(position_angles[eye]):
+                            # Define the path to the data file
+                            filename = f"GazeRaw_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
+                            file_path = os.path.join(rotdir, f"VRAuthStudy1Angle-{member.split('-')[2]}/P{user}/{filename}")
+                            
+                            # Load data
+                            position_angle_raw_data = pd.read_csv(file_path)[position_angle]
+                            position_angle_data = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in position_angle_raw_data]
+                            raw_data[position_angle][(member, size, pin)].extend(position_angle_data)
+                            
+                            # Plotting each angle in its subplot
+                            ax = axes[i]
+                            if preprocess_func:
+                                ax.plot(preprocess_func(position_angle_data))
+                            else:
+                                ax.plot(position_angle_data)
+                            ax.set_title(f"{position_angle} for {member.split('-')[0]} User {user}, Date{member.split('-')[2]}, Size {size}, Pin {pin}, Auth number {num+1}")
+                            ax.set_xlabel("Time")
+                            ax.set_ylabel(position_angle)
+                        
+                        # Save plot
+                        plot_folder = os.path.join("result/", "timeseries_plots", f"{member.split('-')[0]}", "gaze")
+                        if not os.path.exists(plot_folder):
+                            os.makedirs(plot_folder)
+                        
+                        if preprocess_func:
+                            plot_filename = f"GazeRaw_{eye}_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1} {preprocess_func.__name__}.png"
+                        else:
+                            plot_filename = f"GazeRaw_{eye}_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1}.png"
+                        fig.savefig(os.path.join(plot_folder, plot_filename))
+                        plt.close(fig)
+
+    # Method to plot head data
+    def head_user_size_pin_num_drawer(self, authentications_per_person=6, rotdir=None, preprocess_func=None):
+        # Initialize raw data structure for H-Vectors and Angles
+        h_vectors = ['H-Vector3X', 'H-Vector3Y', 'H-Vector3Z']
+        angles = ['Yaw', 'Pitch', 'Roll']
+        raw_data = {position_angle: {(user, size, pin): []
+                                    for user in self.studytype_users_dates for size in self.size_list for pin in self.pin_list}
+                    for position_angle in h_vectors + angles}
+
+        # Collect data and save time-series plots
+        for member in self.studytype_users_dates:
+            user = member.split('-')[1]  # Adjust according to how user is identified in your data
+            for size in self.size_list:
+                for pin in self.pin_list:
+                    for num in range(authentications_per_person):
+                        # Create figures for H-Vectors and Angles
+                        fig_hvectors, axes_hvectors = plt.subplots(3, 1, figsize=(10, 15))
+                        fig_angles, axes_angles = plt.subplots(3, 1, figsize=(10, 15))
+
+                        # Plotting for H-Vectors and Angles
+                        for i, position_angle in enumerate(h_vectors + angles):
+                            # Define file path based on angle type
+                            if position_angle in h_vectors:
+                                filename = f"Head_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
+                                file_path = os.path.join(rotdir, f"VRAuthStudy1-{member.split('-')[2]}/P{user}/{filename}")
+                            if position_angle in angles:
+                                filename = f"Head_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
+                                file_path = os.path.join(rotdir, f"VRAuthStudy1Angle-{member.split('-')[2]}/P{user}/{filename}")
+
+                            # Load data
+                            position_angle_raw_data = pd.read_csv(file_path)[position_angle]
+                            if position_angle in angles:
+                                position_angle_data = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in position_angle_raw_data]
+                            else:
+                                position_angle_data = position_angle_raw_data
+                            
+                            raw_data[position_angle][(member, size, pin)].extend(position_angle_data)
+
+                            
+                            # Select the appropriate subplot and plot the data
+                            if position_angle in h_vectors:
+                                ax = axes_hvectors[h_vectors.index(position_angle)]
+                                fig_to_save = fig_hvectors
+                            else:
+                                ax = axes_angles[angles.index(position_angle)]
+                                fig_to_save = fig_angles
+
+                            if preprocess_func:
+                                ax.plot(preprocess_func(position_angle_data))
+                            else:
+                                ax.plot(position_angle_data)
+                            ax.set_title(f"{position_angle} for User {user}, Size {size}, Pin {pin}, Auth number {num+1}")
+                            ax.set_xlabel("Time")
+                            ax.set_ylabel(position_angle)
+
+                        # Save plots for each type
+                        for fig, angle_type in zip([fig_hvectors, fig_angles], ['H-Vector', 'Angles']):
+                            plot_folder = os.path.join("result/", "timeseries_plots", f"{member.split('-')[0]}", "head")
+                            if not os.path.exists(plot_folder):
+                                os.makedirs(plot_folder)
+                            
+                            if preprocess_func:
+                                plot_filename = f"Head_{angle_type}_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1} {preprocess_func.__name__}.png"
+                            else:
+                                plot_filename = f"Head_{angle_type}_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1}.png"
+                            fig.savefig(os.path.join(plot_folder, plot_filename))
+                            plt.close(fig)
 
     def _create_result_folder(self, folder_name):
         result_dir = os.path.join(os.getcwd(), "result", folder_name)
@@ -940,72 +921,29 @@ class Drawer:
             os.makedirs(result_dir)
         return result_dir
 
-    def run(self):
-        average_times = self.calculate_times()
-        self.plot_time_per_size(average_times)
-        self.plot_time_per_size_pin(average_times)
+    def run(self, options):
+        # Check what the user wants to run and execute it
+        if 'calculate_times' in options:
+            average_times = self.calculate_times()
+            print("Times Calculated.")
 
+        if 'plot_time_per_size' in options:
+            self.plot_time_per_size(average_times)
+            print("Plotted Time per Size.")
 
-# Example of how to use the class
-# drawer = Drawer(filepath="src/data.json", size_list=[3], pin_list=range(13,19))
-# drawer.run()
+        if 'plot_time_per_size_pin' in options:
+            self.plot_time_per_size_pin(average_times)
+            print("Plotted Time per Size and Pin.")
 
-def replace_outlier_and_smooth_data(data):
-    data = replace_local_outliers(data)
-    data = smooth_data(data, window_parameter= 5)
-    return data
+        if 'eye_user_size_pin_num_drawer' in options:
+            self.eye_user_size_pin_num_drawer(authentications_per_person=6, rotdir=self.rotdir)
+            print("Eye Data Plotted.")
 
-def eye_user_size_pin_num_drawer(studytype_users_dates, size_num=[1,2,3,4], pin_num=[1,2,3,4], authentications_per_person=6, rotdir=os.path.join(os.getcwd(),'data'), eye='L', preprocess_func=None):
-    # Define angles for left and right eyes
-    position_angles = {
-        'L': ['L_Yaw', 'L_Pitch', 'L_Roll'],
-        'R': ['R_Yaw', 'R_Pitch', 'R_Roll']
-    }
-    
-    # Initialize raw data structure
-    raw_data = {position_angle: {(user, size, pin): []
-                                for user in studytype_users_dates for size in size_num for pin in pin_num}
-                for position_angle in position_angles[eye]}
+        if 'head_user_size_pin_num_drawer' in options:
+            self.head_user_size_pin_num_drawer(authentications_per_person=6, rotdir=self.rotdir)
+            print("Head Data Plotted.")
 
-    # Collect data
-    for member in studytype_users_dates:
-        user = member.split('-')[1]  # Adjust according to how user is identified in your data
-        for size in size_num:
-            for pin in pin_num:
-                for num in range(authentications_per_person):
-                    # Create a figure with subplots for Yaw, Pitch, and Roll
-                    fig, axes = plt.subplots(3, 1, figsize=(10, 15))
-                    for i, position_angle in enumerate(position_angles[eye]):
-                        # Define the path to the data file
-                        filename = f"GazeRaw_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
-                        file_path = os.path.join(rotdir, f"VRAuthStudy1Angle-{member.split('-')[2]}/P{user}/{filename}")
-                        
-                        # Load data
-                        position_angle_raw_data = pd.read_csv(file_path)[position_angle]
-                        position_angle_data = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in position_angle_raw_data]
-                        raw_data[position_angle][(member, size, pin)].extend(position_angle_data)
-                        
-                        # Plotting each angle in its subplot
-                        ax = axes[i]
-                        if preprocess_func:
-                            ax.plot(preprocess_func(position_angle_data))
-                        else:
-                            ax.plot(position_angle_data)
-                        ax.set_title(f"{position_angle} for {member.split('-')[0]} User {user}, Size {size}, Pin {pin}, Auth number {num+1}")
-                        ax.set_xlabel("Time")
-                        ax.set_ylabel(position_angle)
-                    
-                    # Save plot
-                    plot_folder = os.path.join("result/", "timeseries_plots", f"{member.split('-')[0]}", "gaze")
-                    if not os.path.exists(plot_folder):
-                        os.makedirs(plot_folder)
-                    
-                    if preprocess_func:
-                        plot_filename = f"GazeRaw_{eye}_User{user}_Size{size}_Pin{pin}_Num{num+1} {preprocess_func.__name__}.png"
-                    else:
-                        plot_filename = f"GazeRaw_{eye}_User{user}_Size{size}_Pin{pin}_Num{num+1}.png"
-                    fig.savefig(os.path.join(plot_folder, plot_filename))
-                    plt.close(fig)
-
-eye_user_size_pin_num_drawer(studytype_users_dates=read_data_name_from_json("src/data.json"), size_num= [3], pin_num = range(13,19), authentications_per_person=4, rotdir = os.path.join(os.getcwd(),'data'))
-head_user_size_pin_num_drawer(studytype_users_dates=read_data_name_from_json("src/data.json"), size_num= [3], pin_num = range(13,19), authentications_per_person=4, rotdir = os.path.join(os.getcwd(),'data'))
+# rotdir是文件夹“VRAuthStudy1-1228”等存放的目录，可以是绝对目录，也可以从cwd向下获得
+# Example of how to use the class with different options
+drawer = Drawer(filepath="src/data.json", size_list=[3], pin_list=range(13,19), rotdir = os.path.join(os.getcwd(), 'data'))
+# drawer.run(options=["calculate_times", "plot_time_per_size", "eye_user_size_pin_num_drawer"])

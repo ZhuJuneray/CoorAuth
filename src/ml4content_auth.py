@@ -6,7 +6,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, classification_report
-import os, json, re
+import os, json, re, sys
 from data_preprocess import difference_gaze_head, add_noise, data_zero_smooth_feature, merged_array_generator
 from sklearn.svm import SVC
 
@@ -19,8 +19,8 @@ def smooth_data(arr, window_parameter=9, polyorder_parameter=2):
 def read_data_name_from_json(filepath = "src/data.json"):
     with open(filepath, 'r', encoding='utf-8') as file:
         data = json.load(file)
-    data_list = [f"{item['studytype']}-{item['names']}-{item['date']}" for item in data['data']]
-    latter_auth_list = [f"{item['studytype']}-{item['names']}-{item['date']}" for item in data['latter_auth']]
+    data_list = [f"{item['studytype']}_{item['names']}_{item['date']}_{item['num_range']}" for item in data['data']]
+    latter_auth_list = [f"{item['studytype']}_{item['names']}_{item['date']}_{item['num_range']}" for item in data['latter_auth']]
     return data_list, latter_auth_list
 
 
@@ -30,54 +30,53 @@ def add_small_noise(sequence, noise_level=0.01):
     return augmented_sequence
 
 
-def data_scaled_and_label(studytype_users_dates, rotdir=None, model="", size_num_study1= [1,2,3,4,5,6],
-                           size_num_study2 = [3],  pin_num = [1,2,3,4], authentications_per_person=6,
+def data_scaled_and_label(studytype_users_dates_range, rotdir=None, model="", size_list= None,
+                            pin_list = [1,2,3,4], default_authentications_per_person=6,
                             positive_label=None, noise_level =0.1): # 返回scaled后的原始数据和标签，scaled后的增强后的数据和标签
     import itertools
-    def map_names_to_numbers(names): # 将名字映射为数字，按顺序从1开始，如果名字重复，数字也重复，如：['a','b','a'] -> [1,2,1]
-        name_to_number = {}
-        number_list = []
-        counter = 1
-        for name in names:
-            if name not in name_to_number:
-                name_to_number[name] = counter
-                counter += 1
-            number_list.append(name_to_number[name])
-        return number_list
     
-    size_pin_num_pair=[] # size, pin, num 的所有排列组合，用于数据增强时循环增强所有正标签里的数据
+    studytype_user_date_size_pin_num_pair=[] # studytype, user, date, size, pin, num 的所有排列组合，用于数据增强时循环增强所有正标签里的数据
     result_array = np.array([])
-    for member in studytype_users_dates:
-        if member.split('-')[0] == 'study1': # 因为study1和study2的studytype_users_dates的内容不一样，所以分开处理
-            size_pin_num_pair = [x for x in itertools.product(size_num_study1, pin_num,range(1,authentications_per_person+1))]
-        # 特征:
-            for size in size_num_study1:
-                for pin in pin_num:
-                    for num in range(authentications_per_person):
-                        merged_array = merged_array_generator(member=member, rotdir=rotdir, model=model, size=size, pin=pin, num=num, noise_flag=False) # 返回该member, size, pin, num的特征, 返回的是可以直接用于机器学习的一维X向量
-                        result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array # 将所有特征堆叠起来，每一行是一个特征
+    studytype = studytype_users_dates_range[0].split('_')[0] # studytype只有一种
+    users = [x.split('_')[1] for x in studytype_users_dates_range]
+    dates = [x.split('_')[2] for x in studytype_users_dates_range]
+    _ranges = [x.split('_')[3] for x in studytype_users_dates_range]
+    labels = []
+    binary_labels = []
+    for member in studytype_users_dates_range:
+        # studytype = member.split('_')[0]
+        user = member.split('_')[1]
+        date = member.split('_')[2]
+        num_range = member.split('_')[3]
+        range_start = int(num_range.split('-')[0]) if num_range else 1
+        range_end = int(num_range.split('-')[1]) if num_range else default_authentications_per_person
 
-        if member.split('-')[0] == 'study2':
-            size_pin_num_pair = [x for x in itertools.product(size_num_study2, pin_num,range(1,authentications_per_person+1))]
-        # 特征:
-            for size in size_num_study2:
-                for pin in pin_num:
-                    for num in range(authentications_per_person):
-                        merged_array = merged_array_generator(member=member, rotdir=rotdir, model=model, size=size, pin=pin, num=num, noise_flag=False)
-                        result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array
+        studytype_user_date_size_pin_num_pair.extend([x for x in itertools.product([studytype], [user], [date], size_list, pin_list, range(range_start, range_end+1))])
 
+        # 标签:
+        labels.extend(np.repeat(user, len(size_list)*len(pin_list)*(range_end-range_start+1)))
+        binary_labels.extend([1 if user in positive_label else 0 for _ in range(len(size_list)*len(pin_list)*((range_end-range_start+1)))])
+
+        # 特征:
+        for size in size_list:
+            for pin in pin_list:
+                for num in range(range_start, range_end+1):
+                    # print(f"num:{num}")
+                    merged_array = merged_array_generator(member=member, rotdir=rotdir, model=model, size=size, pin=pin, num=num, noise_flag=False) # 返回该member, size, pin, num的特征, 返回的是可以直接用于机器学习的一维X向量
+                    result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array # 将所有特征堆叠起来，每一行是一个特征
+    
     
     scaler = StandardScaler()
     scaled_data = scaler.fit_transform(result_array) # 标准化数据
 
-    users = [x.split('-')[1] for x in studytype_users_dates]
-    num_people = len(map_names_to_numbers(users))
-    if studytype_users_dates[0].split('-')[0] == 'study1':
-        labels = np.repeat(map_names_to_numbers(users), authentications_per_person*len(size_num_study1)*len(pin_num))
-        binary_labels = np.array([1 if user in positive_label else 0 for user in users for _ in range(authentications_per_person*len(size_num_study1)*len(pin_num))])
-    if studytype_users_dates[0].split('-')[0] == 'study2':
-        labels = np.repeat(map_names_to_numbers(users), authentications_per_person*len(size_num_study2)*len(pin_num))
-        binary_labels = np.array([1 if user in positive_label else 0 for user in users for _ in range(authentications_per_person*len(size_num_study2)*len(pin_num))])
+
+    # num_people = len(map_names_to_numbers(users))
+    # if studytype_users_dates[0].split('-')[0] == 'study1':
+    #     labels = np.repeat(users, authentications_per_person*len(size_num_study1)*len(pin_num))
+    #     binary_labels = np.array([1 if user in positive_label else 0 for user in users for _ in range(authentications_per_person*len(size_num_study1)*len(pin_num))])
+    # if studytype_users_dates[0].split('-')[0] == 'study2':
+    #     labels = np.repeat(users, authentications_per_person*len(size_num_study2)*len(pin_num))
+    #     binary_labels = np.array([1 if user in positive_label else 0 for user in users for _ in range(authentications_per_person*len(size_num_study2)*len(pin_num))])
 
     # 识别正类样本
     positive_indices = np.where(binary_labels == 1)[0]
@@ -94,24 +93,40 @@ def data_scaled_and_label(studytype_users_dates, rotdir=None, model="", size_num
         loop_num = 0
         i=0
         j=0
-        k=0
         positive_features_to_augment = np.array([])
+        # studytype user date size pin num
         
         while loop_num < positive_samples_needed:
-            user_to_copy = users_to_copy[i]
-            pattern = '^'+studytype_users_dates[0].split('-')[0]+f'-{user_to_copy}-.*$'
-            member_to_copy = [x for x in studytype_users_dates if re.match(pattern, x)]
-            merged_array_augmented = merged_array_generator(member=member_to_copy[k], rotdir=rotdir, model=model, size=size_pin_num_pair[j][0], pin=size_pin_num_pair[j][1], num=size_pin_num_pair[j][2]-1, noise_flag=True, noise_level=noise_level)
+            user_to_copy = users_to_copy[loop_num]
+            studytype_user_date_size_pin_num_pair_to_copy = [x for x in studytype_user_date_size_pin_num_pair if x[1] == user_to_copy] #user_to_copy的所有组合
+            studytype_to_copy = studytype_user_date_size_pin_num_pair_to_copy[j][0]
+            date_to_copy = studytype_user_date_size_pin_num_pair_to_copy[j][2]
+            size_to_copy = studytype_user_date_size_pin_num_pair_to_copy[j][3]
+            pin_to_copy = studytype_user_date_size_pin_num_pair_to_copy[j][4]
+            num_to_copy = studytype_user_date_size_pin_num_pair_to_copy[j][5]
+            # print(f"studytype_user_date_size_pin_num_pair_to_copy:{studytype_user_date_size_pin_num_pair_to_copy}")
+            # pattern = '^'+studytype+f'-{user_to_copy}-.*$'
+            # user_size_pin_num_to_copy = [x for x in user_size_pin_num_pair if x[0] == user_to_copy]
+            member_to_copy = f"{studytype_to_copy}_{user_to_copy}_{date_to_copy}" # 用于merged_array_generator的member参数
+            merged_array_augmented = merged_array_generator(member=member_to_copy, rotdir=rotdir, model=model, size=size_to_copy, pin=pin_to_copy, num=num_to_copy, noise_flag=True, noise_level=noise_level)
             positive_features_to_augment = np.vstack([positive_features_to_augment, merged_array_augmented]) if positive_features_to_augment.size else merged_array_augmented
-            if k == len(member_to_copy)-1 and j == len(size_pin_num_pair)-1:
-                i= (i+1)%len(users_to_copy) #选user复制
-                j = (j+1)%len(size_pin_num_pair)
-                k = (k+1)%len(member_to_copy)
-            elif j == len(size_pin_num_pair)-1:
-                j = (j+1)%len(size_pin_num_pair)
-                k = (k+1)%len(member_to_copy) #选member复制（dates）
-            else:
-                j = (j+1)%len(size_pin_num_pair) #选size pin num复制
+
+            # if k == len(member_to_copy)-1 and j == len(size_pin_num_pair)-1:
+            #     i= (i+1)%len(users_to_copy) #选user复制
+            #     j = (j+1)%len(size_pin_num_pair)
+            #     k = (k+1)%len(member_to_copy)
+            # elif j == len(size_pin_num_pair)-1:
+            #     j = (j+1)%len(size_pin_num_pair)
+            #     k = (k+1)%len(member_to_copy) #选member复制（dates）
+            # else:
+            #     j = (j+1)%len(size_pin_num_pair) #选size pin num复制
+            # print(f"j:{j}, loop_num:{loop_num}, len(studytype_user_date_size_pin_num_pair_to_copy):{len(studytype_user_date_size_pin_num_pair_to_copy)}, len(users_to_copy):{len(users_to_copy)}")
+            # if j == len(studytype_user_date_size_pin_num_pair_to_copy)-1:
+            #     i= (i+1)%len(users_to_copy)
+            #     j = (j+1)%len(studytype_user_date_size_pin_num_pair_to_copy)
+            # else:
+            j = (j+1)%len(studytype_user_date_size_pin_num_pair_to_copy)
+
             loop_num+=1
 
         # 生成高斯噪声并添加到选定的正类样本
@@ -122,7 +137,7 @@ def data_scaled_and_label(studytype_users_dates, rotdir=None, model="", size_num
         # 将增强的样本合并回原始数据集
         result_array_augmented = np.concatenate((result_array, positive_features_noisy), axis=0)
         # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
-        binary_labels_augmented = np.concatenate((binary_labels, np.ones(positive_samples_needed)), axis=0)
+        binary_labels_augmented = np.concatenate((binary_labels, [1 for _ in range(positive_samples_needed)]), axis=0)
 
         # 重新缩放数据
         scaler = StandardScaler()
@@ -134,7 +149,10 @@ def data_scaled_and_label(studytype_users_dates, rotdir=None, model="", size_num
         binary_labels_augmented = binary_labels
 
     # 返回原始和增强后的数据和标签
-    return scaled_data, labels, binary_labels, scaled_data_augmented,binary_labels_augmented
+    # print(f"labels:{labels}")
+    # print(f"binary_labels:{binary_labels}")
+    # print(f"binary_labels_augmented:{binary_labels_augmented}")
+    return scaled_data, np.array(labels), np.array(binary_labels), scaled_data_augmented, np.array(binary_labels_augmented)
 
 
 ################################################################ knn 二分类
@@ -145,19 +163,19 @@ def knn4con_binary( model, n_neighbors=3,
 
     # 划分数据集
     X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
-    X_test = np.concatenate((X_test, latter_data_scaled), axis=0)
-    y_test = np.concatenate((y_test, latter_labels), axis=0)
-    print("ytest", y_test)
+    # X_test = np.concatenate((X_test, latter_data_scaled), axis=0)
+    # y_test = np.concatenate((y_test, latter_labels), axis=0)
+    # print("ytest", y_test)
     # print("testing shape:", X_test.shape)
 
     # 创建KNN模型
     knn_model = KNeighborsClassifier(n_neighbors=n_neighbors)
     knn_model.fit(X_train, y_train)
     y_pred = knn_model.predict(X_test)
-    print("ypre", y_pred)
+    # print("ypre", y_pred)
 
-    y_special_pred = knn_model.predict(latter_data_scaled)
-    print("y_special_pred", y_special_pred)
+    # y_special_pred = knn_model.predict(latter_data_scaled)
+    # print("y_special_pred", y_special_pred)
 
 
     # 准确度
@@ -545,13 +563,15 @@ def svm4con_multi_kfolds(model, kernel="linear", C=1, gamma = 0.02, n_splits=3, 
 def main():
 
     positive_label = ['7']  # 正样本
-    data_scaled, labels, binary_labels, scaled_data_augmented, binary_labels_augmented  = data_scaled_and_label(authentications_per_person=9, rotdir = os.path.join(os.getcwd(), "data/"), positive_label=positive_label, model="head+eye", studytype_users_dates=read_data_name_from_json()[0], size_num_study2=[3], pin_num=range(13,19), noise_level=0.0001)
+    data_scaled, labels, binary_labels, scaled_data_augmented, binary_labels_augmented  = data_scaled_and_label(
+        default_authentications_per_person=9, rotdir = os.path.join(os.getcwd(), "data/"), positive_label=positive_label, 
+        model="head+eye", studytype_users_dates_range=read_data_name_from_json()[0], size_list=[3], pin_list=[14], noise_level=0.0001)
     model = ''  # model
     n_split = 2  # k fold
 
-    # print(f"labels:{labels}")
-    # print(f"binary_labels:{binary_labels}")
-    # print(f"binary_labels_augmented:{binary_labels_augmented}")
+    print(f"labels:{labels}")
+    print(f"binary_labels:{binary_labels}")
+    print(f"binary_labels_augmented:{binary_labels_augmented}")
     
     kernel = "linear"
     print(data_scaled.shape)
@@ -598,10 +618,15 @@ def main():
     latter_positive_label = ['7']  # 正样本
 
 
-    latter_data_scaled, latter_labels, latter_binary_labels, _,_  = data_scaled_and_label(authentications_per_person=latter_auth_per_person, rotdir = os.path.join(os.getcwd(), "data/"), positive_label=latter_positive_label, model="head+eye", studytype_users_dates=read_data_name_from_json()[1], size_num_study2=[3], pin_num=range(13,19), noise_level=0.0001)
+    latter_data_scaled, latter_labels, latter_binary_labels, _,_  = data_scaled_and_label(
+        default_authentications_per_person=latter_auth_per_person, rotdir = os.path.join(os.getcwd(), "data/"), 
+        positive_label=latter_positive_label, model="head+eye", studytype_users_dates_range=read_data_name_from_json()[1], 
+        size_list=[3], pin_list=[14], noise_level=0.0001)
     
-
+    
+    print("")
     print(f"latter_data_scaled: {latter_data_scaled.shape}")
+    print("")
 
     print("--------knn_binary------------")
     knn4con_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
@@ -622,4 +647,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+
+    with open('output.txt', 'w') as file: # 将print内容保存到文件
+    # 保存当前的标准输出
+        original_stdout = sys.stdout  
+        # 将标准输出重定向到文件
+        sys.stdout = file  
+        main()
+        # 恢复原来的标准输出
+        sys.stdout = original_stdout  
+
+    # main() # 用于在终端输出print内容
+    

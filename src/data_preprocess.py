@@ -149,9 +149,13 @@ def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir = 
     if angle not in ['Yaw', 'Pitch', 'Roll']:
         raise ValueError("angle must be 'Yaw' or 'Pitch' or 'Roll'")
     # 数据存储在unity_processed_data目录下
+    # member是studytype_user_date
+    studytype = member.split('_')[0]
+    user = member.split('_')[1]
+    date = member.split('_')[2]
     
-    data1 = pd.read_csv(os.path.join(rotdir, f"VRAuthStudy1Angle-{member.split('-')[2]}/P{member.split('-')[1]}/GazeCalculate_data_{member.split('-')[0]}-{member.split('-')[1]}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num)}.csv"))
-    data2 = pd.read_csv(os.path.join(rotdir, f"VRAuthStudy1Angle-{member.split('-')[2]}/P{member.split('-')[1]}/Head_data_{member.split('-')[0]}-{member.split('-')[1]}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num)}.csv"))
+    data1 = pd.read_csv(os.path.join(rotdir, f"VRAuthStudy1Angle-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
+    data2 = pd.read_csv(os.path.join(rotdir, f"VRAuthStudy1Angle-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
 
     # 将读取的数据转换为DataFrame
     df1 = pd.DataFrame(data1)
@@ -371,7 +375,12 @@ def google_sheet_to_json(studytype = "study1", credential_path = "src/credential
 
     for i in range(last_occurrence-first_occurrence+1):  # Adjust the range as needed
         # Generate or collect your data
-        data_item = {"studytype" : studytype, "names": numbered_list[i], "date": sheet.col_values(2)[i+first_occurrence-1]}
+        data_item = {
+            "studytype": studytype,
+            "names": numbered_list[i],  # Indexing numbered_list correctly
+            "date": sheet.col_values(2)[i + first_occurrence - 1],
+            "num_range": ""  # Added num_range attribute with empty value
+        }
         # Append the data item to the list
         data_list.append(data_item)
 
@@ -503,16 +512,20 @@ def data_zero_smooth_feature(eye_data_dir=None, head_data_dir =None, noise_flag=
 
     return d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat
 
-def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag = None, noise_level=0.1):
-    d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat = data_zero_smooth_feature(head_data_dir=rotdir + f"VRAuthStudy1-{member.split('-')[2]}/P{member.split('-')[1]}/Head_data_{member}-{str(size)}-{str(pin)}-{str(num+1)}.csv", eye_data_dir=rotdir + f"VRAuthStudy1-{member.split('-')[2]}/P{member.split('-')[1]}/GazeRaw_data_{member}-{str(size)}-{str(pin)}-{str(num+1)}.csv", noise_flag=noise_flag, noise_level=noise_level)
+def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag = None, noise_level=0.1): # num从1开始
+    # member是studytype_user_date
+    studytype = member.split('_')[0]
+    date = member.split('_')[2]
+    user = member.split('_')[1]
+    d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat = data_zero_smooth_feature(head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv", eye_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/GazeRaw_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv", noise_flag=noise_flag, noise_level=noise_level)
     # Head and eye points
-    diff_yaw_data = difference_gaze_head(member, size, pin, num+1, rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
+    diff_yaw_data = difference_gaze_head(member, size, pin, num, rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
     diff_yaw_smooth = smooth_data(diff_yaw_data, window_parameter=9)
     dy_el_feat = extract_features(np.array(diff_yaw_smooth))
-    diff_pitch_data = difference_gaze_head(member, size, pin, num+1, eye='L', angle='Pitch', rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
+    diff_pitch_data = difference_gaze_head(member, size, pin, num, eye='L', angle='Pitch', rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
     diff_pitch_smooth = smooth_data(diff_pitch_data, window_parameter=9)
     dp_el_feat = extract_features(np.array(diff_pitch_smooth))
-    diff_roll_data = difference_gaze_head(member, size, pin, num+1, eye='L', angle='Roll', rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
+    diff_roll_data = difference_gaze_head(member, size, pin, num, eye='L', angle='Roll', rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
     diff_roll_smooth = smooth_data(diff_roll_data, window_parameter=9)
     dr_el_feat = extract_features(np.array(diff_roll_smooth))
 
