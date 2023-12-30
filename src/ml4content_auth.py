@@ -650,12 +650,12 @@ if __name__ == "__main__":
 
     with open('output.txt', 'w') as file: # 将print内容保存到文件
     # 保存当前的标准输出
-        original_stdout = sys.stdout  
+        original_stdout = sys.stdout
         # 将标准输出重定向到文件
-        sys.stdout = file  
+        sys.stdout = file
         main()
         # 恢复原来的标准输出
-        sys.stdout = original_stdout  
+        sys.stdout = original_stdout
 
     # main() # 用于在终端输出print内容
     
