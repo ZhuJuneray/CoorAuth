@@ -1,68 +1,14 @@
 {
     "data": [
+ 
+
 
         {
-            "studytype": "study1",
-            "names": 2,
-            "date": "1221"
-        },
-        {
-            "studytype": "study1",
-            "names": 3,
-            "date": "1221"
-        },
-        {
-            "studytype": "study1",
-            "names": 4,
-            "date": "1221"
-        },
-        {
-            "studytype": "study1",
-            "names": 5,
-            "date": "1221"
-        },
-        {
-            "studytype": "study1",
-            "names": 6,
-            "date": "1221"
-        },
-        {
-            "studytype": "study1",
+            "studytype": "study2",
             "names": 7,
-            "date": "1221"
-        },
-
-        {
-            "studytype": "study1",
-            "names": 9,
-            "date": "1222"
-        },
-        {
-            "studytype": "study1",
-            "names": 10,
-            "date": "1222"
-        },
-        {
-            "studytype": "study1",
-            "names": 11,
-            "date": "1222"
-        },
-        {
-            "studytype": "study1",
-            "names": 12,
-            "date": "1222"
-        },
-        {
-            "studytype": "study1",
-            "names": 13,
-            "date": "1222"
-        },
-
-        {
-            "studytype": "study1",
-            "names": 15,
-            "date": "1222"
+            "date": "1230"
         }
+
     ],
     "latter_auth": []
 }

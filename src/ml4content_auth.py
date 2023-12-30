@@ -6,15 +6,15 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, classification_report
-import os, json
-from data_preprocess import difference_gaze_head
+import os, json, re
+from data_preprocess import difference_gaze_head, add_noise, data_zero_smooth_feature, merged_array_generator
 from sklearn.svm import SVC
-
 
 
 def smooth_data(arr, window_parameter=9, polyorder_parameter=2):
     arr_smoothed = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
     return arr_smoothed
+
 
 def read_data_name_from_json(filepath = "src/data.json"):
     with open(filepath, 'r', encoding='utf-8') as file:
@@ -23,97 +23,18 @@ def read_data_name_from_json(filepath = "src/data.json"):
     latter_auth_list = [f"{item['studytype']}-{item['names']}-{item['date']}" for item in data['latter_auth']]
     return data_list, latter_auth_list
 
+
 def add_small_noise(sequence, noise_level=0.01):
     noise = np.random.normal(0, noise_level, len(sequence))
     augmented_sequence = sequence + noise
     return augmented_sequence
 
 
-def extract_features(sequence):  # 把序列切成十段，每段取均值、最大值、最小值、方差，共40个特征，返回一个拼接的一维数组
-    # 计算每个子序列的基本长度和额外长度
-    n = len(sequence)
-    # print("length" + str(n))
-    slice_num = 10
-    sub_seq_length = n // slice_num if n % slice_num == 0 else n // slice_num + 1# 向上取整
-    remainder = sub_seq_length - (n // slice_num + 1) * slice_num + n # 处理最后一段未填充满
-
-    # 初始化特征数组
-    features = []
-    features_mean = []       # 均值
-    features_max = []        # 最大值
-    features_min = []        # 最小值
-    features_var = []        # 方差
-    features_median = []     # 中位数
-    features_rms = []        # 均方根值
-    features_std = []        # 标准差
-    features_mad = []        # 平均绝对偏差
-    features_kurtosis = []   # 峰度
-    features_skewness = []   # 偏度
-    features_iqr = []        # 四分位数范围
-    # features_roughness = []  # 粗糙度，需要具体定义
-    # features_sharpness = []  # 锋利度，需要具体定义
-    features_mc = []         # 均值穿越次数
-    features_wamp = []       # Willison幅度
-    features_ssc = []        # 坡度符号变化次数
-    start = 0
-
-    # 对每个子序列进行迭代
-    for i in range(slice_num):
-        # 调整子序列长度
-        end = start + sub_seq_length if i < slice_num - 1 else start + (remainder if remainder > 0 else sub_seq_length)
-        sub_seq = sequence[start:end]
-
-        # 计算特征
-        mean = np.mean(sub_seq)                         # 计算均值
-        max_value = np.max(sub_seq)                     # 计算最大值
-        min_value = np.min(sub_seq)                     # 计算最小值
-        variance = np.var(sub_seq)                      # 计算方差
-        median = np.median(sub_seq)                     # 计算中位数
-        rms = np.sqrt(np.mean(np.square(sub_seq)))      # 计算均方根
-        std_dev = np.std(sub_seq)                       # 计算标准差
-        mad = np.mean(np.abs(sub_seq - np.mean(sub_seq))) # 计算平均绝对偏差
-        # kurt = kurtosis(sub_seq)                        # 计算峰度
-        # skewness = skew(sub_seq)                        # 计算偏度
-        q75, q25 = np.percentile(sub_seq, [75, 25])
-        iqr = q75 - q25                                 # 计算四分位数范围
-        mc = np.sum(np.sign(sub_seq[:-1]) != np.sign(sub_seq[1:])) / len(sub_seq) # 计算均值穿越次数
-        threshold = 0.1  # 根据需要设置阈值
-        wamp = np.sum(np.abs(np.diff(sub_seq)) > threshold) # 计算Willison幅度
-        ssc = np.sum(np.diff(np.sign(np.diff(sub_seq))) != 0) # 计算坡度符号变化次数
-
-        # 添加到特征数组
-        features_mean.append(mean)
-        features_max.append(max_value)
-        features_min.append(min_value)
-        features_var.append(variance)
-        features_median.append(median)
-        features_rms.append(rms)
-        features_std.append(std_dev)
-        features_mad.append(mad)
-        # features_kurtosis.append(kurt)
-        # features_skewness.append(skewness)
-        features_iqr.append(iqr)
-        # features_roughness.append(roughness)  # 根据定义实现
-        # features_sharpness.append(sharpness)  # 根据定义实现
-        features_mc.append(mc)
-        features_wamp.append(wamp)
-        features_ssc.append(ssc)
-
-        # 更新起始位置
-        start = end
-
-
-    # return np.concatenate([features_max])
-
-    return np.concatenate([features_mean, features_max, features_min, features_var,
-                           features_median, features_rms, features_std, features_mad,
-                            features_iqr,
-                           features_mc, features_wamp, features_ssc])
-
-
-def data_scaled_and_label(studytype_users_dates, rotdir=None, model="", size_num_study1= [1,2,3,4,5,6], pin_num = [1,2,3,4], authentications_per_person=6, positive_label=None):
+def data_scaled_and_label(studytype_users_dates, rotdir=None, model="", size_num_study1= [1,2,3,4,5,6],
+                           size_num_study2 = [3],  pin_num = [1,2,3,4], authentications_per_person=6,
+                            positive_label=None, noise_level =0.1): # 返回scaled后的原始数据和标签，scaled后的增强后的数据和标签
     import itertools
-    def map_names_to_numbers(names):
+    def map_names_to_numbers(names): # 将名字映射为数字，按顺序从1开始，如果名字重复，数字也重复，如：['a','b','a'] -> [1,2,1]
         name_to_number = {}
         number_list = []
         counter = 1
@@ -123,164 +44,97 @@ def data_scaled_and_label(studytype_users_dates, rotdir=None, model="", size_num
                 counter += 1
             number_list.append(name_to_number[name])
         return number_list
-
-    # 特征
+    
+    size_pin_num_pair=[] # size, pin, num 的所有排列组合，用于数据增强时循环增强所有正标签里的数据
     result_array = np.array([])
     for member in studytype_users_dates:
-        if member.split('-')[0] == 'study1':
-            authentications_per_person = 2
-            size_pin_num_pair = itertools.product(range(1, len(size_num_study1)+1), range(1, len(pin_num)+1))
-        
+        if member.split('-')[0] == 'study1': # 因为study1和study2的studytype_users_dates的内容不一样，所以分开处理
+            size_pin_num_pair = [x for x in itertools.product(size_num_study1, pin_num,range(1,authentications_per_person+1))]
         # 特征:
             for size in size_num_study1:
                 for pin in pin_num:
                     for num in range(authentications_per_person):
-                    # Head
-                        data_head = pd.read_csv(
-                            rotdir + f"data{member.split('-')[2]}/P{member.split('-')[1]}/Head_data_{member}-{str(size)}-{str(pin)}-{str(num+1)}.csv")
-                        QuaternionX_data = data_head['H-QuaternionX']
-                        QuaternionX_data = QuaternionX_data - np.mean(QuaternionX_data[0:5])
-                        QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
-                        d1 = np.array(QuaternionX_data_smoothed)
-                        d1_feat = extract_features(d1)
-                        QuaternionY_data = data_head['H-QuaternionY']
-                        QuaternionY_data = QuaternionY_data - np.mean(QuaternionY_data[0:5])
-                        QuaternionY_data_smoothed = smooth_data(QuaternionY_data)
-                        d2 = np.array(QuaternionY_data_smoothed)
-                        d2_feat = extract_features(d2)
-                        QuaternionZ_data = data_head['H-QuaternionZ']
-                        QuaternionZ_data = QuaternionZ_data - np.mean(QuaternionZ_data[0:5])
-                        QuaternionZ_data_smoothed = smooth_data(QuaternionZ_data)
-                        d3 = np.array(QuaternionZ_data_smoothed)
-                        d3_feat = extract_features(d3)
-                        QuaternionW_data = data_head['H-QuaternionW']
-                        QuaternionW_data = QuaternionW_data - np.mean(QuaternionW_data[0:5])
-                        QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
-                        d4 = np.array(QuaternionW_data_smoothed)
-                        d4_feat = extract_features(d4)
+                        merged_array = merged_array_generator(member=member, rotdir=rotdir, model=model, size=size, pin=pin, num=num, noise_flag=False) # 返回该member, size, pin, num的特征, 返回的是可以直接用于机器学习的一维X向量
+                        result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array # 将所有特征堆叠起来，每一行是一个特征
 
-                        Vector3X_data = data_head['H-Vector3X']
-                        Vector3X_data = Vector3X_data - np.mean(Vector3X_data[0:5])
-                        Vector3X_data_smoothed = smooth_data(Vector3X_data)
-                        v1 = np.array(Vector3X_data_smoothed)
-                        v1_feat = extract_features(v1)
-                        Vector3Y_data = data_head['H-Vector3Y']
-                        Vector3Y_data = Vector3Y_data - np.mean(Vector3Y_data[0:5])
-                        Vector3Y_data_smoothed = smooth_data(Vector3Y_data)
-                        v2 = np.array(Vector3Y_data_smoothed)
-                        v2_feat = extract_features(v2)
-                        Vector3Z_data = data_head['H-Vector3Z']
-                        Vector3Z_data = Vector3Z_data - np.mean(Vector3Z_data[0:5])
-                        Vector3Z_data_smoothed = smooth_data(Vector3Z_data)
-                        v3 = np.array(Vector3Z_data_smoothed)
-                        v3_feat = extract_features(v3)
-
-                        # Eye points
-                        data_eye = pd.read_csv(
-                            rotdir + f"data{member.split('-')[2]}/P{member.split('-')[1]}/GazeRaw_data_{member}-{str(size)}-{str(pin)}-{str(num+1)}.csv")
-                        QuaternionX_data = data_eye['L-QuaternionX']
-                        QuaternionX_data = QuaternionX_data - np.mean(QuaternionX_data[0:5])
-                        QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
-                        d1_el = np.array(QuaternionX_data_smoothed)
-                        d1_el_feat = extract_features(d1_el)
-                        QuaternionY_data = data_eye['L-QuaternionY']
-                        QuaternionY_data = QuaternionY_data - np.mean(QuaternionY_data[0:5])
-                        QuaternionY_data_smoothed = smooth_data(QuaternionY_data)
-                        d2_el = np.array(QuaternionY_data_smoothed)
-                        d2_el_feat = extract_features(d2_el)
-                        QuaternionZ_data = data_eye['L-QuaternionZ']
-                        QuaternionZ_data = QuaternionZ_data - np.mean(QuaternionZ_data[0:5])
-                        QuaternionZ_data_smoothed = smooth_data(QuaternionZ_data)
-                        d3_el = np.array(QuaternionZ_data_smoothed)
-                        d3_el_feat = extract_features(d3_el)
-                        QuaternionW_data = data_eye['L-QuaternionW']
-                        QuaternionW_data = QuaternionW_data - np.mean(QuaternionW_data[0:5])
-                        QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
-                        d4_el = np.array(QuaternionW_data_smoothed)
-                        d4_el_feat = extract_features(d4_el)
-
-                        QuaternionX_data = data_eye['R-QuaternionX']
-                        QuaternionX_data = QuaternionX_data - np.mean(QuaternionX_data[0:5])
-                        QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
-                        d1_er = np.array(QuaternionX_data_smoothed)
-                        d1_er_feat = extract_features(d1_er)
-                        QuaternionY_data = data_eye['R-QuaternionY']
-                        QuaternionY_data = QuaternionY_data - np.mean(QuaternionY_data[0:5])
-                        QuaternionY_data_smoothed = smooth_data(QuaternionY_data)
-                        d2_er = np.array(QuaternionY_data_smoothed)
-                        d2_er_feat = extract_features(d2_er)
-                        QuaternionZ_data = data_eye['R-QuaternionZ']
-                        QuaternionZ_data = QuaternionZ_data - np.mean(QuaternionZ_data[0:5])
-                        QuaternionZ_data_smoothed = smooth_data(QuaternionZ_data)
-                        d3_er = np.array(QuaternionZ_data_smoothed)
-                        d3_er_feat = extract_features(d3_er)
-                        QuaternionW_data = data_eye['R-QuaternionW']
-                        QuaternionW_data = QuaternionW_data - np.mean(QuaternionW_data[0:5])
-                        QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
-                        d4_er = np.array(QuaternionW_data_smoothed)
-                        d4_er_feat = extract_features(d4_er)
-
-                        # Head and eye points
-                        diff_yaw_data = difference_gaze_head(member, size, pin, num+1, rotdir=rotdir)
-                        diff_yaw_smooth = smooth_data(diff_yaw_data, window_parameter=9)
-                        dy_el_feat = extract_features(np.array(diff_yaw_smooth))
-                        diff_pitch_data = difference_gaze_head(member, size, pin, num+1, eye='L', angle='Pitch', rotdir=rotdir)
-                        diff_pitch_smooth = smooth_data(diff_pitch_data, window_parameter=9)
-                        dp_el_feat = extract_features(np.array(diff_pitch_smooth))
-                        diff_roll_data = difference_gaze_head(member, size, pin, num+1, eye='L', angle='Roll', rotdir=rotdir)
-                        diff_roll_smooth = smooth_data(diff_roll_data, window_parameter=9)
-                        dr_el_feat = extract_features(np.array(diff_roll_smooth))
-
-                        if model == 'head':
-                            merged_array = np.concatenate(
-                                [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat])
-                        # 利用特征：切10段的特征
-                        elif model == "eye":
-                            merged_array = np.concatenate(
-                                [d1_el_feat, d2_el_feat, d3_el_feat,
-                                    d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, ])
-                        elif model == "head+eye":
-                            # 利用特征：切10段的特征
-                            merged_array = np.concatenate(
-                                [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat,
-                                    d3_el_feat,
-                                    d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, ])
-                        elif model == "diff":
-                            # 利用特征：切10段的特征
-                            merged_array = np.concatenate([dy_el_feat, dp_el_feat, dr_el_feat]
-                            )
-                        elif model == "eye+diff":
-                            merged_array = np.concatenate([dy_el_feat, dp_el_feat,
-                                                            dr_el_feat, d1_el_feat, d2_el_feat, d3_el_feat,
-                                    d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat]
-                            )
-                        else:
-                            merged_array = np.concatenate(
-                                [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat,
-                                    d3_el_feat,
-                                    d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat,
-                                    dy_el_feat, dp_el_feat, dr_el_feat])
-                        # print(d1)
-                        if np.isnan(d1_feat).any():
-                            print("NaN values found in d1_feat")
-                            # 定位NaN值
-                            print(np.argwhere(np.isnan(d1_feat)))
-                        # if num == 1:
-                        #     print("user" + user + "data" + str(merged_array))
+        if member.split('-')[0] == 'study2':
+            size_pin_num_pair = [x for x in itertools.product(size_num_study2, pin_num,range(1,authentications_per_person+1))]
+        # 特征:
+            for size in size_num_study2:
+                for pin in pin_num:
+                    for num in range(authentications_per_person):
+                        merged_array = merged_array_generator(member=member, rotdir=rotdir, model=model, size=size, pin=pin, num=num, noise_flag=False)
                         result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array
+
     
     scaler = StandardScaler()
-    scaled_data = scaler.fit_transform(result_array)
-    # print(scaled_data.shape)
+    scaled_data = scaler.fit_transform(result_array) # 标准化数据
+
     users = [x.split('-')[1] for x in studytype_users_dates]
     num_people = len(map_names_to_numbers(users))
     if studytype_users_dates[0].split('-')[0] == 'study1':
         labels = np.repeat(map_names_to_numbers(users), authentications_per_person*len(size_num_study1)*len(pin_num))
         binary_labels = np.array([1 if user in positive_label else 0 for user in users for _ in range(authentications_per_person*len(size_num_study1)*len(pin_num))])
-    # print(labels.shape)
-    # binary_labels = np.array([1 if user in positive_label else 0 for user in users for _ in range(authentications_per_person)])
-        # print(np.argwhere(np.isnan(scaled_data)))
-    return scaled_data, labels, binary_labels
+    if studytype_users_dates[0].split('-')[0] == 'study2':
+        labels = np.repeat(map_names_to_numbers(users), authentications_per_person*len(size_num_study2)*len(pin_num))
+        binary_labels = np.array([1 if user in positive_label else 0 for user in users for _ in range(authentications_per_person*len(size_num_study2)*len(pin_num))])
+
+    # 识别正类样本
+    positive_indices = np.where(binary_labels == 1)[0]
+    positive_features = result_array[positive_indices]
+
+    # 确定增强的正样本数量以达到大约50%的正样本比例
+    total_samples_needed = len(binary_labels)  # 总样本数
+    positive_samples_needed = int(total_samples_needed) - 2*len(positive_indices)  # 需要增强的正样本数
+
+    # 如果需要增强的样本数为负数或零，则不执行任何操作
+    if positive_samples_needed > 0:
+        # 选择正样本进行复制和添加噪声
+        users_to_copy = np.random.choice(positive_label, size=positive_samples_needed, replace=True)
+        loop_num = 0
+        i=0
+        j=0
+        k=0
+        positive_features_to_augment = np.array([])
+        
+        while loop_num < positive_samples_needed:
+            user_to_copy = users_to_copy[i]
+            pattern = '^'+studytype_users_dates[0].split('-')[0]+f'-{user_to_copy}-.*$'
+            member_to_copy = [x for x in studytype_users_dates if re.match(pattern, x)]
+            merged_array_augmented = merged_array_generator(member=member_to_copy[k], rotdir=rotdir, model=model, size=size_pin_num_pair[j][0], pin=size_pin_num_pair[j][1], num=size_pin_num_pair[j][2]-1, noise_flag=True, noise_level=noise_level)
+            positive_features_to_augment = np.vstack([positive_features_to_augment, merged_array_augmented]) if positive_features_to_augment.size else merged_array_augmented
+            if k == len(member_to_copy)-1 and j == len(size_pin_num_pair)-1:
+                i= (i+1)%len(users_to_copy) #选user复制
+                j = (j+1)%len(size_pin_num_pair)
+                k = (k+1)%len(member_to_copy)
+            elif j == len(size_pin_num_pair)-1:
+                j = (j+1)%len(size_pin_num_pair)
+                k = (k+1)%len(member_to_copy) #选member复制（dates）
+            else:
+                j = (j+1)%len(size_pin_num_pair) #选size pin num复制
+            loop_num+=1
+
+        # 生成高斯噪声并添加到选定的正类样本
+        noise_scale = noise_level * positive_features_to_augment.std()  # 调整噪声水平
+        gaussian_noise = np.random.normal(0, noise_scale, positive_features_to_augment.shape)
+        positive_features_noisy = positive_features_to_augment + gaussian_noise
+
+        # 将增强的样本合并回原始数据集
+        result_array_augmented = np.concatenate((result_array, positive_features_noisy), axis=0)
+        # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
+        binary_labels_augmented = np.concatenate((binary_labels, np.ones(positive_samples_needed)), axis=0)
+
+        # 重新缩放数据
+        scaler = StandardScaler()
+        scaled_data_augmented = scaler.fit_transform(result_array_augmented)
+    else:
+        # 如果不需要增加正样本，则保持原始数据不变
+        scaled_data_augmented = scaled_data
+        # label_augmented = labels
+        binary_labels_augmented = binary_labels
+
+    # 返回原始和增强后的数据和标签
+    return scaled_data, labels, binary_labels, scaled_data_augmented,binary_labels_augmented
 
 
 ################################################################ knn 二分类
@@ -289,19 +143,22 @@ def knn4con_binary( model, n_neighbors=3,
     # 生成示例数据
     # labels = np.repeat(np.arange(num_people), authentications_per_person)
 
-    # 打印示例数据形状
-    # print("Data shape:", data.shape)
-    # print("Labels shape:", labels.shape)
-    # print("authentications_per_person", authentications_per_person, 'user_names', user_names)
-
     # 划分数据集
     X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
+    X_test = np.concatenate((X_test, latter_data_scaled), axis=0)
+    y_test = np.concatenate((y_test, latter_labels), axis=0)
+    print("ytest", y_test)
     # print("testing shape:", X_test.shape)
 
     # 创建KNN模型
     knn_model = KNeighborsClassifier(n_neighbors=n_neighbors)
     knn_model.fit(X_train, y_train)
     y_pred = knn_model.predict(X_test)
+    print("ypre", y_pred)
+
+    y_special_pred = knn_model.predict(latter_data_scaled)
+    print("y_special_pred", y_special_pred)
+
 
     # 准确度
     accuracy = accuracy_score(y_test, y_pred)
@@ -333,16 +190,17 @@ def knn4con_binary( model, n_neighbors=3,
     print(f"FAR: {far:.4f}")
     print(f"FRR: {frr:.4f}")
 
-    if latter_data_scaled != 0:
-        latter_y_pred = knn_model.predict(latter_data_scaled)
-        print(latter_y_pred, latter_labels)
+    # if not np.isnan(latter_data_scaled):
+    latter_y_pred = knn_model.predict(latter_data_scaled)
+    print(latter_y_pred, latter_labels)
 
-        latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
-        print('随时间推移的准确率', latter_accuracy)
+    latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+    print('随时间推移的准确率', latter_accuracy)
 
 
 ################################################################ knn 多分类
-def knn4con_multi(model, n_neighbors=3, data_scaled=None, labels=None):
+def knn4con_multi(model, n_neighbors=3,
+                    data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
     # 划分数据集
     X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
     # print("testing shape:", X_test.shape)
@@ -367,6 +225,13 @@ def knn4con_multi(model, n_neighbors=3, data_scaled=None, labels=None):
     print("精确度:", precision)
     print("召回率:", recall)
     print("F1分数:", f1)
+
+    # if not np.isnan(latter_data_scaled):
+    latter_y_pred = knn_model.predict(latter_data_scaled)
+    print(latter_y_pred, latter_labels)
+
+    latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+    print('随时间推移的准确率', latter_accuracy)
 
     # # 分类报告
     # class_report = classification_report(y_test, y_pred)
@@ -418,12 +283,13 @@ def svm4con_binary(model, kernel="linear", C=1, gamma=0.02,
     print(f"FRR: {frr:.4f}")
 
 
-    if latter_data_scaled != 0:
-        latter_y_pred = svm_model.predict(latter_data_scaled)
-        print(latter_y_pred, latter_labels)
+    # if not np.isnan(latter_data_scaled):
+    latter_y_pred = svm_model.predict(latter_data_scaled)
+    print(latter_y_pred, latter_labels)
 
-        latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
-        print('随时间推移的准确率', latter_accuracy)
+    latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+    print('随时间推移的准确率', latter_accuracy)
+
 
 ################################################################ svm 多分类
 def svm4con_multi(model, kernel="linear", C=1, gamma=0.02,
@@ -452,6 +318,12 @@ def svm4con_multi(model, kernel="linear", C=1, gamma=0.02,
     print("精确度:", precision)
     print("召回率:", recall)
     print("F1分数:", f1)
+    # if not np.isnan(latter_data_scaled):
+    latter_y_pred = svm_model.predict(latter_data_scaled)
+    print(latter_y_pred, latter_labels)
+
+    latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+    print('随时间推移的准确率', latter_accuracy)
 
 
 ################################################################ knn kfold 二分类
@@ -500,6 +372,7 @@ def knn4con_binary_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, binary_la
 
         fars.append(far)
         frrs.append(frr)
+  
 
         # # 打印每个折叠的准确性
         # for i, acc in enumerate(accuracies):
@@ -670,32 +543,22 @@ def svm4con_multi_kfolds(model, kernel="linear", C=1, gamma = 0.02, n_splits=3, 
 
 ################################################################ main
 def main():
-    ################################ train和test部分
-    # 每个人采集次数
-    # authentications_per_person = 6
 
-    # user_names = ["m-zhao", 'mzs', "m-zjr", 'mhyr', 'mljq', 'mgx', 'mlwk', ]
-    # user_names = ['m-zjr', 'm-zhao']
-    # scene = ""
-
-    
-
-    # for i in range(len(user_names)):
-    #     user_names[i] = scene + user_names[i]
-
-    positive_label = ['9','10']  # 正样本
-    data_scaled, labels, binary_labels = data_scaled_and_label(authentications_per_person=2, rotdir = os.path.join(os.getcwd(), "data/"), positive_label=positive_label, model="head+eye+diff", studytype_users_dates=read_data_name_from_json()[0], size_num_study1=[1, 2, 3, 4, 5, 6], pin_num=[1, 2, 3, 4])
-    positive_latter_label = ['3']  # 正样本
-    # latter_data_scaled, latter_labels, latter_binary_labels = data_scaled_and_label(authentications_per_person=2, rotdir = os.path.join(os.getcwd(), "data/data1221/"), positive_label=positive_latter_label, model="head+eye+diff", studytype_users_dates=read_data_name_from_json()[1], size_num_study1=[1,2,3,4,5,6], pin_num=[4])
-    # print(data_scaled.shape())
-    # print(binary_labels)
+    positive_label = ['7']  # 正样本
+    data_scaled, labels, binary_labels, scaled_data_augmented, binary_labels_augmented  = data_scaled_and_label(authentications_per_person=9, rotdir = os.path.join(os.getcwd(), "data/"), positive_label=positive_label, model="head+eye", studytype_users_dates=read_data_name_from_json()[0], size_num_study2=[3], pin_num=range(13,19), noise_level=0.0001)
     model = ''  # model
-
     n_split = 2  # k fold
 
+    # print(f"labels:{labels}")
+    # print(f"binary_labels:{binary_labels}")
+    # print(f"binary_labels_augmented:{binary_labels_augmented}")
     
-
     kernel = "linear"
+    print(data_scaled.shape)
+
+    # 原数据和标签跑机器学习模型
+    print("")
+    print("original data")
 
     print("---------knn_binary_kfold------------")
     knn4con_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
@@ -714,35 +577,47 @@ def main():
     svm4con_multi_kfolds(data_scaled=data_scaled, labels=labels,
                          model=model,
                          n_splits=n_split, kernel=kernel)
+    
+    # 数据增强后的数据和标签跑模型
+    print("")
+    print("augmented data")
 
-    # ################################ 随时间推移重新检验部分
-    # latter_auth_per_person = 2
+    print("---------knn_binary_kfold------------")
+    knn4con_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+                          model=model, n_splits=n_split)
+    
+    print("----------svm_binary_kfold------------")
+    svm4con_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+                           n_splits=n_split, kernel=kernel)
+    
 
-    # latter_user_names = ['']
-    # # latter_scene = ''
+    ################################ 随时间推移重新检验部分
 
-    # # for i in range(len(latter_user_names)):
-    # #     latter_user_names[i] = latter_scene + latter_user_names[i]
+    # 日后新采的数据属性
+    latter_auth_per_person = 4 # 每人采集次数
+    latter_positive_label = ['7']  # 正样本
 
-    # latter_dates = ['1216']
 
-    # latter_positive_label = [latter_user_names[0]]
+    latter_data_scaled, latter_labels, latter_binary_labels, _,_  = data_scaled_and_label(authentications_per_person=latter_auth_per_person, rotdir = os.path.join(os.getcwd(), "data/"), positive_label=latter_positive_label, model="head+eye", studytype_users_dates=read_data_name_from_json()[1], size_num_study2=[3], pin_num=range(13,19), noise_level=0.0001)
+    
 
-    # print("--------knn_binary------------")
-    # knn4con_binary(latter_auth_per_person=latter_auth_per_person, data_scaled=data_scaled, binary_labels=binary_labels,
-    #                model=model, latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
+    print(f"latter_data_scaled: {latter_data_scaled.shape}")
 
-    # print("---------knn_multi------------")
-    # knn4con_multi(model=model, data_scaled=data_scaled, labels=labels)
+    print("--------knn_binary------------")
+    knn4con_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+                   model=model, latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
 
-    # print("---------svm_binary------------")
-    # svm4con_binary(latter_auth_per_person=latter_auth_per_person, data_scaled=data_scaled, binary_labels=binary_labels,
-    #                model=model, latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
+    print("---------knn_multi------------")
+    knn4con_multi(model=model, data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
 
-    # print("---------svm_multi------------")
-    # svm4con_multi(latter_auth_per_person=latter_auth_per_person, data_scaled=data_scaled, binary_labels=binary_labels,
-    #                model=model, latter_data_scaled=latter_data_scaled, latter_labels=latter_labels
-    #               )
+    print("---------svm_binary------------")
+    svm4con_binary( data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+                   model=model, latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
+
+    print("---------svm_multi------------")
+    svm4con_multi(data_scaled=data_scaled, labels=labels,
+                   model=model, latter_data_scaled=latter_data_scaled, latter_labels=latter_labels
+                  )
 
 
 

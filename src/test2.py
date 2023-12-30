@@ -18,4 +18,22 @@ def map_names_to_numbers(names):
     return number_list
 import matplotlib.pyplot as plt
 import numpy as np
+import itertools
 
+# a=[1,2,1,4,1,6,7,8,10]
+# b=[1,2,3,3,2,4]
+# # print(a[b])
+# x = np.random.choice(np.where(np.array(a)==1)[0], size=2)
+# print(x)
+# print(np.array(b)[x])
+# print([x for x in range(1,6)])
+# print(len([x for x in itertools.product([1,2,3],[4,5,6],[7,8,9])]))
+# a={key1:{key2:[] for key2 in [1,2,3]} for key1 in [1,2,3]}
+# a[1][2].extend([1,2,3])
+# print(a)
+# a[1][2].extend([4,5,6])
+# print(a)
+
+
+
+print(np.max([-0.15553798 -0.15283738 -0.14982002]))
