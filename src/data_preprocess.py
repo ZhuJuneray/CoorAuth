@@ -7,6 +7,7 @@ from cycler import cycler
 import os
 import json
 import itertools
+import warnings
 
 
 def read_data_name_from_json(filepath = os.path.join(os.getcwd(), "src/data.json")):
@@ -45,18 +46,68 @@ def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
     return arr
 
 
+# 1231 update 考虑smooth_data的细节：是否需要平滑？是否需要去除离群值？
 def smooth_data(arr, window_parameter=9, polyorder_parameter=2): # 平滑数据
     arr = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
     return arr
 
 
-def extract_features(sequence, slice_num=10):  # 把序列切成十段，每段取均值、最大值、最小值、方差，共40个特征，返回一个拼接的一维数组
-    # 计算每个子序列的基本长度和额外长度
-    n = len(sequence)
-    # print("length" + str(n))
-    sub_seq_length = n // slice_num if n % slice_num == 0 else n // slice_num + 1# 向上取整
-    remainder = sub_seq_length - (n // slice_num + 1) * slice_num + n # 处理最后一段未填充满
+# 1231update ranges为fixation的一个list
+def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十段，每段取均值、最大值、最小值、方差，共40个特征，返回一个拼接的一维数组
+    # 如果range不空，则按照range中的start和end切分，saccades占slice_num - n段，fixation占n段
+    range_fixation = []
+    range_sacaades = []
+    fixation_num = 5
+    saccades_num = slice_num - fixation_num # 每种切段的数量
+    tmp_end = 0
+    if ranges is not None:
+        for start, end in ranges:
+            range_fixation.append([start, end])
+            range_sacaades.append([tmp_end, start]) if tmp_end != 0 else None
+            tmp_end = end
+        # 长度不足, 使用已经添加过的数据来填充
+        while len(range_fixation) < fixation_num:
+            # 从 range_fixation 中获取数据填充
+            previous_data = range_fixation[0]
+            range_fixation.append(previous_data)
+        while len(range_sacaades) < saccades_num:
+            previous_data = range_sacaades[-1]
+            range_sacaades.append(previous_data)
+    # range 为空，等距切分
+    else:
+        # 计算每个子序列的基本长度和额外长度
+        n = len(sequence)
+        # print("length" + str(n))
+        sub_seq_length = n // slice_num if n % slice_num == 0 else n // slice_num + 1  # 向上取整
+        remainder = sub_seq_length - (n // slice_num + 1) * slice_num + n  # 处理最后一段未填充满
+        start = 0
+        for i in range(slice_num):
+            # 调整子序列长度
+            end = start + sub_seq_length if i < slice_num - 1 else start + (
+                remainder if remainder > 0 else sub_seq_length)
+            range_sacaades.append([start, end])
+            range_fixation.append([start, end])
+            start = end
 
+    # 处理超长的情况
+    if len(range_sacaades) > saccades_num:
+        range_sacaades = range_sacaades[-saccades_num:]
+    if len(range_fixation) > fixation_num:
+        range_fixation = range_fixation[:fixation_num]
+    # print(ranges, "range_sacaades", range_sacaades, "range_fix", range_fixation)
+    ranges = range_fixation + range_sacaades # 也即5个fixation和5个saccades
+    # print("changed ranges", ranges)
+    # update 1.1 改成了函数，获得序列本身的特征向量
+    seq_initial = get_n_derivation_features(sequence, ranges)
+    # 1阶导
+    seq_second = get_n_derivation_features(np.diff(sequence), ranges)
+
+    seq_all = np.concatenate([seq_initial, seq_second])
+    return seq_all
+
+
+# update1.1 获得n阶导的特征向量
+def get_n_derivation_features(sequence, ranges):
     # 初始化特征数组
     features = []
     features_mean = []       # 均值
@@ -75,14 +126,9 @@ def extract_features(sequence, slice_num=10):  # 把序列切成十段，每段�
     features_mc = []         # 均值穿越次数
     features_wamp = []       # Willison幅度
     features_ssc = []        # 坡度符号变化次数
-    start = 0
 
-    # 对每个子序列进行迭代
-    for i in range(slice_num):
-        # 调整子序列长度
-        end = start + sub_seq_length if i < slice_num - 1 else start + (remainder if remainder > 0 else sub_seq_length)
+    for start, end in ranges:
         sub_seq = sequence[start:end]
-
         # 计算特征
         mean = np.mean(sub_seq)                         # 计算均值
         max_value = np.max(sub_seq)                     # 计算最大值
@@ -119,9 +165,9 @@ def extract_features(sequence, slice_num=10):  # 把序列切成十段，每段�
         features_wamp.append(wamp) # zero
         features_ssc.append(ssc) # low
 
-        # 更新起始位置
-        start = end
-
+    # return np.concatenate([features_mean, features_max, features_min, features_var,
+    #                        features_median, features_rms, features_std, features_mad,
+    #                         features_iqr, features_mc, features_wamp, features_ssc])
     return np.concatenate([features_mean, features_max, features_min, features_var,
                            features_median, features_rms, features_std, features_mad,
                             features_iqr, features_mc, features_wamp, features_ssc])
@@ -401,15 +447,28 @@ def add_noise(data, noise_level=0.1):
     return data_noisy
 
 
-def feature_process_quaternion(eye_data_dir=None, head_data_dir=None, noise_flag=False, noise_level=0.1):
+# 1231update segment_data_dir为切断的文件路径
+def feature_process_quaternion(segment_data_dir=None, eye_data_dir=None, head_data_dir=None, noise_flag=False, noise_level=0.1):
+    # 切段文件是否存在, 不存在就用默认的切片方法
+    ranges = None
+    if segment_data_dir is not None:
+        if not os.path.exists(segment_data_dir):
+            warnings.warn(f"The file {segment_data_dir} does not exist.", Warning)
+        else:
+            with open(segment_data_dir, 'r') as file:
+                text_data = file.read().strip()
+                # Parse the ranges from the text data
+                ranges = [list(map(int, r.split('-'))) for r in text_data.split(';') if r]
+
     data_head = pd.read_csv(head_data_dir)
+    # 头的四元组
     QuaternionX_data = data_head['H-QuaternionX']
     if noise_flag:
         QuaternionX_data = add_noise(QuaternionX_data, noise_level)
     QuaternionX_data = QuaternionX_data - np.mean(QuaternionX_data[0:5])
     QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
     d1 = np.array(QuaternionX_data_smoothed)
-    d1_feat = extract_features(d1)
+    d1_feat = extract_features(d1, ranges=ranges)
     QuaternionY_data = data_head['H-QuaternionY']
     if noise_flag:
         QuaternionY_data = add_noise(QuaternionY_data, noise_level)
@@ -431,7 +490,7 @@ def feature_process_quaternion(eye_data_dir=None, head_data_dir=None, noise_flag
     QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
     d4 = np.array(QuaternionW_data_smoothed)
     d4_feat = extract_features(d4)
-
+    # 头的坐标
     Vector3X_data = data_head['H-Vector3X']
     if noise_flag:
         Vector3X_data = add_noise(Vector3X_data, noise_level)
@@ -454,7 +513,7 @@ def feature_process_quaternion(eye_data_dir=None, head_data_dir=None, noise_flag
     v3 = np.array(Vector3Z_data_smoothed)
     v3_feat = extract_features(v3)
 
-    # Eye points
+    # 眼睛的四元组
     data_eye = pd.read_csv(eye_data_dir)
     QuaternionX_data = data_eye['L-QuaternionX']
     if noise_flag:
@@ -601,7 +660,8 @@ def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag=Non
     # 四元组 calculate为世界坐标，raw为头部局域坐标下的旋转数值
     d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el,\
         d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er,\
-        d4_er_feat = feature_process_quaternion(head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+        d4_er_feat = feature_process_quaternion(segment_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Saccades_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.txt",
+                                                head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
                                                 eye_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
                                                 noise_flag=noise_flag, noise_level=noise_level)
     # 角度 calculate为世界坐标，raw为头部局域坐标下的旋转数值
@@ -623,8 +683,8 @@ def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag=Non
 
     if model == 'head':
         merged_array = np.concatenate(
-            # [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat])
-            [d1_feat, d2_feat, d3_feat])
+            [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat])
+            # [d1_feat, d2_feat, d3_feat])
 
     # 利用特征：切10段的特征
     elif model == "eye":
