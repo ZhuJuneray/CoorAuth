@@ -97,19 +97,19 @@
             "studytype": "study2",
             "names": 2,
             "date": "1228",
-            "num_range": "1-5"
+            "num_range": "8-10"
         },
         {
             "studytype": "study2",
             "names": 9,
             "date": "1229",
-            "num_range": "1-5"
+            "num_range": "8-10"
         },
         {
             "studytype": "study2",
             "names": 10,
             "date": "1229",
-            "num_range": "1-5"
+            "num_range": "8-10"
         }
     ]
 }

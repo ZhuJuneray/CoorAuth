@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import savgol_filter
+from scipy.stats import kurtosis, skew
 from cycler import cycler
 import os
 import json
@@ -45,8 +46,8 @@ def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
 
 
 def smooth_data(arr, window_parameter=9, polyorder_parameter=2): # 平滑数据
-    arr_smoothed = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
-    return arr_smoothed
+    arr = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
+    return arr
 
 
 def extract_features(sequence, slice_num=10):  # 把序列切成十段，每段取均值、最大值、最小值、方差，共40个特征，返回一个拼接的一维数组
@@ -91,8 +92,8 @@ def extract_features(sequence, slice_num=10):  # 把序列切成十段，每段�
         rms = np.sqrt(np.mean(np.square(sub_seq)))      # 计算均方根
         std_dev = np.std(sub_seq)                       # 计算标准差
         mad = np.mean(np.abs(sub_seq - np.mean(sub_seq))) # 计算平均绝对偏差
-        # kurt = kurtosis(sub_seq)                        # 计算峰度
-        # skewness = skew(sub_seq)                        # 计算偏度
+        kurt = kurtosis(sub_seq)                        # 计算峰度
+        skewness = skew(sub_seq)                        # 计算偏度
         q75, q25 = np.percentile(sub_seq, [75, 25])
         iqr = q75 - q25                                 # 计算四分位数范围
         mc = np.sum(np.sign(sub_seq[:-1]) != np.sign(sub_seq[1:])) / len(sub_seq) # 计算均值穿越次数
@@ -101,22 +102,22 @@ def extract_features(sequence, slice_num=10):  # 把序列切成十段，每段�
         ssc = np.sum(np.diff(np.sign(np.diff(sub_seq))) != 0) # 计算坡度符号变化次数
 
         # 添加到特征数组
-        features_mean.append(mean)
-        features_max.append(max_value)
-        features_min.append(min_value)
+        features_mean.append(mean) #high
+        features_max.append(max_value) #high
+        features_min.append(min_value) #high
         features_var.append(variance)
-        features_median.append(median)
+        features_median.append(median) #high
         features_rms.append(rms)
         features_std.append(std_dev)
         features_mad.append(mad)
-        # features_kurtosis.append(kurt)
-        # features_skewness.append(skewness)
-        features_iqr.append(iqr)
-        # features_roughness.append(roughness)  # 根据定义实现
-        # features_sharpness.append(sharpness)  # 根据定义实现
-        features_mc.append(mc)
-        features_wamp.append(wamp)
-        features_ssc.append(ssc)
+        features_kurtosis.append(kurt) # low
+        features_skewness.append(skewness) # low
+        features_iqr.append(iqr) # mid
+        # features_roughness.append(roughness)  #
+        # features_sharpness.append(sharpness)  #
+        features_mc.append(mc) # low
+        features_wamp.append(wamp) # zero
+        features_ssc.append(ssc) # low
 
         # 更新起始位置
         start = end
@@ -177,7 +178,7 @@ def fourier_gaze(user, date, num, eye='L', angle='Yaw'): # 读取用户特定日
         raise ValueError("eye must be 'L' or 'R'")
     if angle not in ['Yaw', 'Pitch', 'Roll']:
         raise ValueError("angle must be 'Yaw' or 'Pitch' or 'Roll'")
-    data1 = pd.read_csv(os.path.join("data","GazeCalculate_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
+    data1 = pd.read_csv(os.path.join("data", "GazeCalculate_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
     df1 = pd.DataFrame(data1)
 
 
@@ -400,7 +401,7 @@ def add_noise(data, noise_level=0.1):
     return data_noisy
 
 
-def data_zero_smooth_feature(eye_data_dir=None, head_data_dir =None, noise_flag=False, noise_level=0.1):
+def feature_process_quaternion(eye_data_dir=None, head_data_dir=None, noise_flag=False, noise_level=0.1):
     data_head = pd.read_csv(head_data_dir)
     QuaternionX_data = data_head['H-QuaternionX']
     if noise_flag:
@@ -517,17 +518,99 @@ def data_zero_smooth_feature(eye_data_dir=None, head_data_dir =None, noise_flag=
         d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat
 
 
+def feature_process_angle(eye_data_dir=None, head_data_dir=None, noise_flag=False, noise_level=0.1):
+    data_head = pd.read_csv(head_data_dir)
+    Yaw_data = data_head['Yaw']
+    if noise_flag:
+        Yaw_data = add_noise(Yaw_data, noise_level)
+    Yaw_data = Yaw_data - np.mean(Yaw_data[0:5])
+    Yaw_data_smoothed = smooth_data(Yaw_data)
+    d1 = np.array(Yaw_data_smoothed)
+    d1_feat = extract_features(d1)
+    Pitch_data = data_head['Pitch']
+    if noise_flag:
+        Pitch_data = add_noise(Pitch_data, noise_level)
+    Pitch_data = Pitch_data - np.mean(Pitch_data[0:5])
+    Pitch_data_smoothed = smooth_data(Pitch_data)
+    d2 = np.array(Pitch_data_smoothed)
+    d2_feat = extract_features(d2)
+    Roll_data = data_head['Roll']
+    if noise_flag:
+        Roll_data = add_noise(Roll_data, noise_level)
+    Roll_data = Roll_data - np.mean(Roll_data[0:5])
+    Roll_data_smoothed = smooth_data(Roll_data)
+    d3 = np.array(Roll_data_smoothed)
+    d3_feat = extract_features(d3)
+
+    # Eye points
+    data_eye = pd.read_csv(eye_data_dir)
+    Yaw_data = data_eye['L_Yaw']
+    if noise_flag:
+        Yaw_data = add_noise(Yaw_data, noise_level)
+    Yaw_data = Yaw_data - np.mean(Yaw_data[0:5])
+    Yaw_data_smoothed = smooth_data(Yaw_data)
+    d1_el = np.array(Yaw_data_smoothed)
+    d1_el_feat = extract_features(d1_el)
+    Pitch_data = data_eye['L_Pitch']
+    if noise_flag:
+        Pitch_data = add_noise(Pitch_data, noise_level)
+    Pitch_data = Pitch_data - np.mean(Pitch_data[0:5])
+    Pitch_data_smoothed = smooth_data(Pitch_data)
+    d2_el = np.array(Pitch_data_smoothed)
+    d2_el_feat = extract_features(d2_el)
+    Roll_data = data_eye['L_Roll']
+    if noise_flag:
+        Roll_data = add_noise(Roll_data, noise_level)
+    Roll_data = Roll_data - np.mean(Roll_data[0:5])
+    Roll_data_smoothed = smooth_data(Roll_data)
+    d3_el = np.array(Roll_data_smoothed)
+    d3_el_feat = extract_features(d3_el)
+
+    # 右眼
+    Yaw_data = data_eye['R_Yaw']
+    if noise_flag:
+        Yaw_data = add_noise(Yaw_data, noise_level)
+    Yaw_data = Yaw_data - np.mean(Yaw_data[0:5])
+    Yaw_data_smoothed = smooth_data(Yaw_data)
+    d1_er = np.array(Yaw_data_smoothed)
+    d1_er_feat = extract_features(d1_er)
+    Pitch_data = data_eye['R_Pitch']
+    if noise_flag:
+        Pitch_data = add_noise(Pitch_data, noise_level)
+    Pitch_data = Pitch_data - np.mean(Pitch_data[0:5])
+    Pitch_data_smoothed = smooth_data(Pitch_data)
+    d2_er = np.array(Pitch_data_smoothed)
+    d2_er_feat = extract_features(d2_er)
+    Roll_data = data_eye['R_Roll']
+    if noise_flag:
+        Roll_data = add_noise(Roll_data, noise_level)
+    Roll_data = Roll_data - np.mean(Roll_data[0:5])
+    Roll_data_smoothed = smooth_data(Roll_data)
+    d3_er = np.array(Roll_data_smoothed)
+    d3_er_feat = extract_features(d3_er)
+
+    return d1, d1_feat, d2, d2_feat, d3, d3_feat, d1_el, d1_el_feat,\
+        d2_el, d2_el_feat, d3_el, d3_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat
+
+
 def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag=None, noise_level=0.1): # num从1开始
     # member是studytype_user_date
     studytype = member.split('_')[0]
     date = member.split('_')[2]
     user = member.split('_')[1]
+    # 四元组 calculate为世界坐标，raw为头部局域坐标下的旋转数值
     d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el,\
         d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er,\
-        d4_er_feat = data_zero_smooth_feature(head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
-                                              eye_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/GazeRaw_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
-                                              noise_flag=noise_flag, noise_level=noise_level)
-    # Head and eye points
+        d4_er_feat = feature_process_quaternion(head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+                                                eye_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+                                                noise_flag=noise_flag, noise_level=noise_level)
+    # 角度 calculate为世界坐标，raw为头部局域坐标下的旋转数值
+    # d1, d1_feat, d2, d2_feat, d3, d3_feat, d1_el, d1_el_feat, d2_el, d2_el_feat, d3_el, d3_el_feat, \
+    #     d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, \
+    #     d3_er_feat = feature_process_angle(head_data_dir=rotdir + f"VRAuthStudy1Angle-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+    #                                             eye_data_dir=rotdir + f"VRAuthStudy1Angle-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+    #                                             noise_flag=noise_flag, noise_level=noise_level)
+    # 头眼差值
     diff_yaw_data = difference_gaze_head(member, size, pin, num, rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
     diff_yaw_smooth = smooth_data(diff_yaw_data, window_parameter=9)
     dy_el_feat = extract_features(np.array(diff_yaw_smooth))
@@ -539,10 +622,10 @@ def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag=Non
     dr_el_feat = extract_features(np.array(diff_roll_smooth))
 
     if model == 'head':
-        # merged_array = np.concatenate(
-        #     [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat])
         merged_array = np.concatenate(
-            [d1_feat, d2_feat, d3_feat, d4_feat])
+            # [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat])
+            [d1_feat, d2_feat, d3_feat])
+
     # 利用特征：切10段的特征
     elif model == "eye":
         merged_array = np.concatenate(
