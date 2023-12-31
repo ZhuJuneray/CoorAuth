@@ -7,24 +7,16 @@ import os
 import json
 import itertools
 
+
 def read_data_name_from_json(filepath = os.path.join(os.getcwd(), "src/data.json")):
         with open(filepath, 'r', encoding='utf-8') as file:
             data = json.load(file)
         data_list = [f"{item['studytype']}-{item['names']}-{item['date']}" for item in data['data']]
         return data_list
 
+
 def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
-    """
-    使用滑动窗口方法替换一维数组中的局部离群值。
 
-    参数:
-    arr: 一维数组，可以是列表或NumPy数组
-    window_size: 滑动窗口的大小
-    threshold: 离群值的阈值，基于局部IQR
-
-    返回:
-    替换局部离群值后的数组
-    """
     arr = np.array(arr)
     half_window = window_size // 2
     n = len(arr)
@@ -55,6 +47,7 @@ def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
 def smooth_data(arr, window_parameter=9, polyorder_parameter=2): # 平滑数据
     arr_smoothed = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
     return arr_smoothed
+
 
 def extract_features(sequence, slice_num=10):  # 把序列切成十段，每段取均值、最大值、最小值、方差，共40个特征，返回一个拼接的一维数组
     # 计算每个子序列的基本长度和额外长度
@@ -130,8 +123,8 @@ def extract_features(sequence, slice_num=10):  # 把序列切成十段，每段�
 
     return np.concatenate([features_mean, features_max, features_min, features_var,
                            features_median, features_rms, features_std, features_mad,
-                            features_iqr,
-                           features_mc, features_wamp, features_ssc])
+                            features_iqr, features_mc, features_wamp, features_ssc])
+
 
 def difference_gaze_lr_euler_angle(user, date, num): # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
     data = pd.read_csv(os.path.join(os.getcwd(), "data", "GazeCalculate_data_" + user + "-" + date + "-" + str(num) + "_unity_processed.csv"))
@@ -143,7 +136,9 @@ def difference_gaze_lr_euler_angle(user, date, num): # 读取用户特定日期�
     L_R_Roll = [x - y if abs(x - y) < 180 else (x - y - 360 if x - y >180 else x - y +360) for x, y in zip(df['L_Roll'], df['R_Roll'])]
     return L_R_Yaw, L_R_Pitch, L_R_Roll
 
-def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir = "", noise_flag=False, noise_level=0.1):# 读取用户特定日期和序号的视线数据和头部数据，以list返回视线和头部偏航角度之间的差异, num从1开始, eye='L' or 'R', angle='Yaw' or 'Pitch' or 'Roll'
+
+def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir="", noise_flag=False, noise_level=0.1):# 读取用户特定日期和序号的视线数据和头部数据
+    # ，以list返回视线和头部偏航角度之间的差异, num从1开始, eye='L' or 'R', angle='Yaw' or 'Pitch' or 'Roll'
     if eye not in ['L', 'R']:
         raise ValueError("eye must be 'L' or 'R'")
     if angle not in ['Yaw', 'Pitch', 'Roll']:
@@ -176,6 +171,7 @@ def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir = 
     # 返回视线和头部偏航角度之间的差异
     return [x - y for x, y in zip(gaze_df, head_df)]
 
+
 def fourier_gaze(user, date, num, eye='L', angle='Yaw'): # 读取用户特定日期和序号的视线数据，以list返回视线偏航角度的傅里叶变换结果
     if eye not in ['L', 'R']:
         raise ValueError("eye must be 'L' or 'R'")
@@ -192,6 +188,7 @@ def fourier_gaze(user, date, num, eye='L', angle='Yaw'): # 读取用户特定日
     freq_gaze=np.fft.fftfreq(len(gaze_df),0.02)
 
     return gaze_df, fft_gaze, freq_gaze  # 返回视线偏航角度的傅里叶变换结果
+
 
 def quaternion_to_euler (x, y, z, w): # result is different from Unity, idk why
     # x, y, z, w are numpy arrays of shape (n,)
@@ -210,6 +207,7 @@ def quaternion_to_euler (x, y, z, w): # result is different from Unity, idk why
     yaw = np.arctan2 (t3, t4)
 
     return np.degrees([roll, pitch, yaw])
+
 
 def quaternion_to_euler_df(dataframe): # result is different from Unity, idk why
     """
@@ -241,6 +239,7 @@ def quaternion_to_euler_df(dataframe): # result is different from Unity, idk why
         row['L-QuaternionW'], row['L-QuaternionX'], row['L-QuaternionY'], row['L-QuaternionZ']), axis=1)
 
     return pd.DataFrame(euler_angles.tolist(), columns=['Yaw', 'Pitch', 'Roll'])
+
 
 def unity_quaternion_to_euler(x, y, z, w): # result is different from Unity, idk why
     """
@@ -332,11 +331,13 @@ def unity_quaternion_to_euler(x, y, z, w): # result is different from Unity, idk
 
 #     return train_set, train_set_positive_label, train_set_negative_label, test_set
 
+
 def range_to_int_value(range_str):
         def range_to_int_start_end(range_str, value='start'):
             values = list(map(int, range_str.split('-')))
             return values[0] if value == 'start' else values[1]
         return range_to_int_start_end(range_str, 'end')-range_to_int_start_end(range_str, 'start')
+
 
 def google_sheet_to_json(studytype = "study1", credential_path = "src/credentials.json", google_sheet_name = "被试招募", json_save_path= "src/data.json"):
     import gspread
@@ -391,11 +392,13 @@ def google_sheet_to_json(studytype = "study1", credential_path = "src/credential
     with open(json_save_path, 'w', encoding='utf-8') as file:
         json.dump(data_to_write, file, ensure_ascii=False, indent=4)
 
+
 def add_noise(data, noise_level=0.1):
     std_dev = noise_level * np.std(data)  # 计算噪声的标准差
     noise = np.random.normal(0, std_dev, data.shape)  # 生成高斯噪声
     data_noisy = data + noise  # 将噪声添加到原始数据
     return data_noisy
+
 
 def data_zero_smooth_feature(eye_data_dir=None, head_data_dir =None, noise_flag=False, noise_level=0.1):
     data_head = pd.read_csv(head_data_dir)
@@ -510,14 +513,20 @@ def data_zero_smooth_feature(eye_data_dir=None, head_data_dir =None, noise_flag=
     d4_er = np.array(QuaternionW_data_smoothed)
     d4_er_feat = extract_features(d4_er)
 
-    return d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat
+    return d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat,\
+        d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat
 
-def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag = None, noise_level=0.1): # num从1开始
+
+def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag=None, noise_level=0.1): # num从1开始
     # member是studytype_user_date
     studytype = member.split('_')[0]
     date = member.split('_')[2]
     user = member.split('_')[1]
-    d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat = data_zero_smooth_feature(head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv", eye_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/GazeRaw_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv", noise_flag=noise_flag, noise_level=noise_level)
+    d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el,\
+        d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er,\
+        d4_er_feat = data_zero_smooth_feature(head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+                                              eye_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/GazeRaw_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+                                              noise_flag=noise_flag, noise_level=noise_level)
     # Head and eye points
     diff_yaw_data = difference_gaze_head(member, size, pin, num, rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
     diff_yaw_smooth = smooth_data(diff_yaw_data, window_parameter=9)
