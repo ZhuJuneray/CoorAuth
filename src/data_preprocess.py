@@ -517,7 +517,11 @@ def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag = N
     studytype = member.split('_')[0]
     date = member.split('_')[2]
     user = member.split('_')[1]
-    d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat = data_zero_smooth_feature(head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv", eye_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/GazeRaw_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv", noise_flag=noise_flag, noise_level=noise_level)
+    (d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, 
+     d1_el, d1_el_feat, d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat ) = data_zero_smooth_feature(
+         head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+        eye_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/GazeRaw_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+        noise_flag=noise_flag, noise_level=noise_level)
     # Head and eye points
     diff_yaw_data = difference_gaze_head(member, size, pin, num, rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
     diff_yaw_smooth = smooth_data(diff_yaw_data, window_parameter=9)
