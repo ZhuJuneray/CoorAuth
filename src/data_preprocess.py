@@ -10,7 +10,7 @@ import itertools
 import warnings
 
 
-def read_data_latter_data_json(filepath="D:\pycharm\srt_vr_auth\src\data.json"):
+def read_data_latter_data_json(filepath=os.path.join(os.getcwd(), "src/data.json")):
     with open(filepath, 'r', encoding='utf-8') as file:
         data = json.load(file)
     data_list = [f"{item['studytype']}_{item['names']}_{item['date']}_{item['num_range']}" for item in data['data']]
@@ -163,11 +163,11 @@ def get_n_derivation_features(sequence, ranges):
         features_mean.append(mean)  # high
         features_max.append(max_value)  # high
         features_min.append(min_value)  # high
-        features_var.append(variance)
+        features_var.append(variance)   
         features_median.append(median)  # high
-        features_rms.append(rms)
-        features_std.append(std_dev)
-        features_mad.append(mad)
+        features_rms.append(rms)        
+        features_std.append(std_dev)    
+        features_mad.append(mad)        
         features_kurtosis.append(kurt)  # low
         features_skewness.append(skewness)  # low
         features_iqr.append(iqr)  # mid
@@ -177,7 +177,7 @@ def get_n_derivation_features(sequence, ranges):
         features_wamp.append(wamp)  # zero
         features_ssc.append(ssc)  # low
 
-    return np.concatenate([features_mean, features_max, features_min, features_var,
+    return np.concatenate([features_max
                            ])
 
 

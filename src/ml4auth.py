@@ -454,7 +454,7 @@ def svm4con_multi_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scal
 
 ################################################################ main
 def main():
-    os.chdir('D:\pycharm\srt_vr_auth')  # cwd的绝对路径
+    # os.chdir('D:\pycharm\srt_vr_auth')  # cwd的绝对路径
     positive_label = ['7']  # 正样本
     model = 'head'  # model
     n_split = 3  # k fold
