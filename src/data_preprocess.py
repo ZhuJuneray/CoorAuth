@@ -10,14 +10,23 @@ import itertools
 import warnings
 
 
-def read_data_name_from_json(filepath = os.path.join(os.getcwd(), "src/data.json")):
-        with open(filepath, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-        data_list = [f"{item['studytype']}-{item['names']}-{item['date']}" for item in data['data']]
-        return data_list
+def read_data_latter_data_json(filepath="D:\pycharm\srt_vr_auth\src\data.json"):
+    with open(filepath, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    data_list = [f"{item['studytype']}_{item['names']}_{item['date']}_{item['num_range']}" for item in data['data']]
+    latter_auth_list = [f"{item['studytype']}_{item['names']}_{item['date']}_{item['num_range']}" for item in
+                        data['latter_auth']]
+    return data_list, latter_auth_list
 
 
-def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
+def read_data_name_from_json(filepath=os.path.join(os.getcwd(), "src/data.json")):
+    with open(filepath, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    data_list = [f"{item['studytype']}-{item['names']}-{item['date']}" for item in data['data']]
+    return data_list
+
+
+def replace_local_outliers(arr, window_size=5, threshold=1.5):  # 去除离群值
 
     arr = np.array(arr)
     half_window = window_size // 2
@@ -39,7 +48,8 @@ def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
         # 定义局部离群值
         if arr[i] < Q1 - threshold * IQR or arr[i] > Q3 + threshold * IQR:
             # 用邻近非离群值替换
-            non_outlier_data = window_data[(window_data >= Q1 - threshold * IQR) & (window_data <= Q3 + threshold * IQR)]
+            non_outlier_data = window_data[
+                (window_data >= Q1 - threshold * IQR) & (window_data <= Q3 + threshold * IQR)]
             if len(non_outlier_data) > 0:
                 arr[i] = np.mean(non_outlier_data)
 
@@ -47,8 +57,9 @@ def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
 
 
 # 1231 update 考虑smooth_data的细节：是否需要平滑？是否需要去除离群值？
-def smooth_data(arr, window_parameter=9, polyorder_parameter=2): # 平滑数据
-    arr = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
+def smooth_data(arr, window_parameter=9, polyorder_parameter=2):  # 平滑数据
+    arr = replace_local_outliers(arr)
+    # arr = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
     return arr
 
 
@@ -58,14 +69,14 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     range_fixation = []
     range_sacaades = []
     fixation_num = 5
-    saccades_num = slice_num - fixation_num # 每种切段的数量
+    saccades_num = slice_num - fixation_num  # 每种切段的数量
     tmp_end = 0
     if ranges is not None:
         for start, end in ranges:
             range_fixation.append([start, end])
             range_sacaades.append([tmp_end, start]) if tmp_end != 0 else None
             tmp_end = end
-        # 长度不足, 使用已经添加过的数据来填充
+        # 长度不足, 使用已经添加过的数据来填充 fixation使用第一段填充，saccades用最后一段填充
         while len(range_fixation) < fixation_num:
             # 从 range_fixation 中获取数据填充
             previous_data = range_fixation[0]
@@ -89,14 +100,15 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
             range_fixation.append([start, end])
             start = end
 
-    # 处理超长的情况
+    # 处理超长的情况，saccades保留最后，fixation保留前面
     if len(range_sacaades) > saccades_num:
         range_sacaades = range_sacaades[-saccades_num:]
     if len(range_fixation) > fixation_num:
         range_fixation = range_fixation[:fixation_num]
     # print(ranges, "range_sacaades", range_sacaades, "range_fix", range_fixation)
-    ranges = range_fixation + range_sacaades # 也即5个fixation和5个saccades
+    ranges = range_fixation + range_sacaades  # 也即5个fixation和5个saccades
     # print("changed ranges", ranges)
+
     # update 1.1 改成了函数，获得序列本身的特征向量
     seq_initial = get_n_derivation_features(sequence, ranges)
     # 1阶导
@@ -110,81 +122,85 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
 def get_n_derivation_features(sequence, ranges):
     # 初始化特征数组
     features = []
-    features_mean = []       # 均值
-    features_max = []        # 最大值
-    features_min = []        # 最小值
-    features_var = []        # 方差
-    features_median = []     # 中位数
-    features_rms = []        # 均方根值
-    features_std = []        # 标准差
-    features_mad = []        # 平均绝对偏差
-    features_kurtosis = []   # 峰度
-    features_skewness = []   # 偏度
-    features_iqr = []        # 四分位数范围
+    features_mean = []  # 均值
+    features_max = []  # 最大值
+    features_min = []  # 最小值
+    features_var = []  # 方差
+    features_median = []  # 中位数
+    features_rms = []  # 均方根值
+    features_std = []  # 标准差
+    features_mad = []  # 平均绝对偏差
+    features_kurtosis = []  # 峰度
+    features_skewness = []  # 偏度
+    features_iqr = []  # 四分位数范围
     # features_roughness = []  # 粗糙度，需要具体定义
     # features_sharpness = []  # 锋利度，需要具体定义
-    features_mc = []         # 均值穿越次数
-    features_wamp = []       # Willison幅度
-    features_ssc = []        # 坡度符号变化次数
+    features_mc = []  # 均值穿越次数
+    features_wamp = []  # Willison幅度
+    features_ssc = []  # 坡度符号变化次数
 
     for start, end in ranges:
         sub_seq = sequence[start:end]
         # 计算特征
-        mean = np.mean(sub_seq)                         # 计算均值
-        max_value = np.max(sub_seq)                     # 计算最大值
-        min_value = np.min(sub_seq)                     # 计算最小值
-        variance = np.var(sub_seq)                      # 计算方差
-        median = np.median(sub_seq)                     # 计算中位数
-        rms = np.sqrt(np.mean(np.square(sub_seq)))      # 计算均方根
-        std_dev = np.std(sub_seq)                       # 计算标准差
-        mad = np.mean(np.abs(sub_seq - np.mean(sub_seq))) # 计算平均绝对偏差
-        kurt = kurtosis(sub_seq)                        # 计算峰度
-        skewness = skew(sub_seq)                        # 计算偏度
+        mean = np.mean(sub_seq)  # 计算均值
+        max_value = np.max(sub_seq)  # 计算最大值
+        min_value = np.min(sub_seq)  # 计算最小值
+        variance = np.var(sub_seq)  # 计算方差
+        median = np.median(sub_seq)  # 计算中位数
+        rms = np.sqrt(np.mean(np.square(sub_seq)))  # 计算均方根
+        std_dev = np.std(sub_seq)  # 计算标准差
+        mad = np.mean(np.abs(sub_seq - np.mean(sub_seq)))  # 计算平均绝对偏差
+        kurt = kurtosis(sub_seq)  # 计算峰度
+        skewness = skew(sub_seq)  # 计算偏度
         q75, q25 = np.percentile(sub_seq, [75, 25])
-        iqr = q75 - q25                                 # 计算四分位数范围
-        mc = np.sum(np.sign(sub_seq[:-1]) != np.sign(sub_seq[1:])) / len(sub_seq) # 计算均值穿越次数
+        iqr = q75 - q25  # 计算四分位数范围
+        mc = np.sum(np.sign(sub_seq[:-1]) != np.sign(sub_seq[1:])) / len(sub_seq)  # 计算均值穿越次数
         threshold = 0.1  # 根据需要设置阈值
-        wamp = np.sum(np.abs(np.diff(sub_seq)) > threshold) # 计算Willison幅度
-        ssc = np.sum(np.diff(np.sign(np.diff(sub_seq))) != 0) # 计算坡度符号变化次数
+        wamp = np.sum(np.abs(np.diff(sub_seq)) > threshold)  # 计算Willison幅度
+        ssc = np.sum(np.diff(np.sign(np.diff(sub_seq))) != 0)  # 计算坡度符号变化次数
 
         # 添加到特征数组
-        features_mean.append(mean) #high
-        features_max.append(max_value) #high
-        features_min.append(min_value) #high
+        features_mean.append(mean)  # high
+        features_max.append(max_value)  # high
+        features_min.append(min_value)  # high
         features_var.append(variance)
-        features_median.append(median) #high
+        features_median.append(median)  # high
         features_rms.append(rms)
         features_std.append(std_dev)
         features_mad.append(mad)
-        features_kurtosis.append(kurt) # low
-        features_skewness.append(skewness) # low
-        features_iqr.append(iqr) # mid
+        features_kurtosis.append(kurt)  # low
+        features_skewness.append(skewness)  # low
+        features_iqr.append(iqr)  # mid
         # features_roughness.append(roughness)  #
         # features_sharpness.append(sharpness)  #
-        features_mc.append(mc) # low
-        features_wamp.append(wamp) # zero
-        features_ssc.append(ssc) # low
+        features_mc.append(mc)  # low
+        features_wamp.append(wamp)  # zero
+        features_ssc.append(ssc)  # low
 
     # return np.concatenate([features_mean, features_max, features_min, features_var,
     #                        features_median, features_rms, features_std, features_mad,
     #                         features_iqr, features_mc, features_wamp, features_ssc])
     return np.concatenate([features_mean, features_max, features_min, features_var,
-                           features_median, features_rms, features_std, features_mad,
-                            features_iqr, features_mc, features_wamp, features_ssc])
+                           ])
 
 
-def difference_gaze_lr_euler_angle(user, date, num): # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
-    data = pd.read_csv(os.path.join(os.getcwd(), "data", "GazeCalculate_data_" + user + "-" + date + "-" + str(num) + "_unity_processed.csv"))
+def difference_gaze_lr_euler_angle(user, date, num):  # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
+    data = pd.read_csv(os.path.join(os.getcwd(), "data", "GazeCalculate_data_" + user + "-" + date + "-" + str(
+        num) + "_unity_processed.csv"))
     # Create DataFrame
     df = pd.DataFrame(data)
 
-    L_R_Yaw = [x - y if abs(x - y) < 180 else (x - y - 360 if x - y >180 else x - y +360) for x, y in zip(df['L_Yaw'], df['R_Yaw'])]
-    L_R_Pitch = [x - y if abs(x - y) < 180 else (x - y - 360 if x - y >180 else x - y +360) for x, y in zip(df['L_Pitch'], df['R_Pitch'])]
-    L_R_Roll = [x - y if abs(x - y) < 180 else (x - y - 360 if x - y >180 else x - y +360) for x, y in zip(df['L_Roll'], df['R_Roll'])]
+    L_R_Yaw = [x - y if abs(x - y) < 180 else (x - y - 360 if x - y > 180 else x - y + 360) for x, y in
+               zip(df['L_Yaw'], df['R_Yaw'])]
+    L_R_Pitch = [x - y if abs(x - y) < 180 else (x - y - 360 if x - y > 180 else x - y + 360) for x, y in
+                 zip(df['L_Pitch'], df['R_Pitch'])]
+    L_R_Roll = [x - y if abs(x - y) < 180 else (x - y - 360 if x - y > 180 else x - y + 360) for x, y in
+                zip(df['L_Roll'], df['R_Roll'])]
     return L_R_Yaw, L_R_Pitch, L_R_Roll
 
 
-def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir="", noise_flag=False, noise_level=0.1):# 读取用户特定日期和序号的视线数据和头部数据
+def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir="", noise_flag=False,
+                         noise_level=0.1):  # 读取用户特定日期和序号的视线数据和头部数据
     # ，以list返回视线和头部偏航角度之间的差异, num从1开始, eye='L' or 'R', angle='Yaw' or 'Pitch' or 'Roll'
     if eye not in ['L', 'R']:
         raise ValueError("eye must be 'L' or 'R'")
@@ -195,9 +211,11 @@ def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir=""
     studytype = member.split('_')[0]
     user = member.split('_')[1]
     date = member.split('_')[2]
-    
-    data1 = pd.read_csv(os.path.join(rotdir, f"VRAuthStudy1Angle-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
-    data2 = pd.read_csv(os.path.join(rotdir, f"VRAuthStudy1Angle-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
+
+    data1 = pd.read_csv(os.path.join(rotdir,
+                                     f"VRAuthStudy1Angle-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
+    data2 = pd.read_csv(os.path.join(rotdir,
+                                     f"VRAuthStudy1Angle-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
 
     # 将读取的数据转换为DataFrame
     df1 = pd.DataFrame(data1)
@@ -205,13 +223,14 @@ def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir=""
 
     # 从视线数据中计算初始偏航角度的偏移
     if noise_flag:
-        df1[eye + '_' + angle]=add_noise(df1[eye + '_' + angle], noise_level=noise_level)
+        df1[eye + '_' + angle] = add_noise(df1[eye + '_' + angle], noise_level=noise_level)
     gaze_zero = np.mean(df1[eye + '_' + angle][0:5])
-    gaze_df = [x - gaze_zero if abs(x - gaze_zero) < 200 else (x - gaze_zero - 360 if x - gaze_zero > 200 else x - gaze_zero + 360) for x in df1[eye + '_' + angle]]
+    gaze_df = [x - gaze_zero if abs(x - gaze_zero) < 200 else (
+        x - gaze_zero - 360 if x - gaze_zero > 200 else x - gaze_zero + 360) for x in df1[eye + '_' + angle]]
 
     # 从头部数据中计算初始偏航角度（Yaw）的偏移，并调整角度超过180度的情况
     if noise_flag:
-        df2[angle]=add_noise(df2[angle], noise_level=noise_level)
+        df2[angle] = add_noise(df2[angle], noise_level=noise_level)
     head_zero = np.mean([x if x < 180 else x - 360 for x in df2[angle][0:5]])
     head_df = [x - head_zero if x < 180 else x - head_zero - 360 for x in df2[angle]]
 
@@ -219,76 +238,26 @@ def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir=""
     return [x - y for x, y in zip(gaze_df, head_df)]
 
 
-def fourier_gaze(user, date, num, eye='L', angle='Yaw'): # 读取用户特定日期和序号的视线数据，以list返回视线偏航角度的傅里叶变换结果
+def fourier_gaze(user, date, num, eye='L', angle='Yaw'):  # 读取用户特定日期和序号的视线数据，以list返回视线偏航角度的傅里叶变换结果
     if eye not in ['L', 'R']:
         raise ValueError("eye must be 'L' or 'R'")
     if angle not in ['Yaw', 'Pitch', 'Roll']:
         raise ValueError("angle must be 'Yaw' or 'Pitch' or 'Roll'")
-    data1 = pd.read_csv(os.path.join("data", "GazeCalculate_data_" + user + "-" + date + "-" + str(num+1) + "_unity_processed.csv"))
+    data1 = pd.read_csv(
+        os.path.join("data", "GazeCalculate_data_" + user + "-" + date + "-" + str(num + 1) + "_unity_processed.csv"))
     df1 = pd.DataFrame(data1)
 
-
     gaze_zero = df1[eye + '_' + angle][0]
-    gaze_df = [x - gaze_zero if abs(x - gaze_zero) < 200 else (x - gaze_zero -  360 if x- gaze_zero >200 else x - gaze_zero + 360 ) for x in df1[eye + '_' + angle]]
+    gaze_df = [x - gaze_zero if abs(x - gaze_zero) < 200 else (
+        x - gaze_zero - 360 if x - gaze_zero > 200 else x - gaze_zero + 360) for x in df1[eye + '_' + angle]]
     # gaze_df_slice = gaze_df[slice_l:slice_r]
     fft_gaze = np.fft.fft(gaze_df)
-    freq_gaze=np.fft.fftfreq(len(gaze_df),0.02)
+    freq_gaze = np.fft.fftfreq(len(gaze_df), 0.02)
 
     return gaze_df, fft_gaze, freq_gaze  # 返回视线偏航角度的傅里叶变换结果
 
 
-def quaternion_to_euler (x, y, z, w): # result is different from Unity, idk why
-    # x, y, z, w are numpy arrays of shape (n,)
-    # return three numpy arrays of shape (n,) representing roll, pitch, yaw
-    
-    t0 = +2.0 * (w * x + y * z)
-    t1 = +1.0 - 2.0 * (x * x + y * y)
-    roll = np.arctan2 (t0, t1)
-
-    t2 = +2.0 * (w * y - z * x)
-    t2 = np.clip (t2, -1.0, 1.0) # avoid invalid values due to numerical errors
-    pitch = np.arcsin (t2)
-
-    t3 = +2.0 * (w * z + x * y)
-    t4 = +1.0 - 2.0 * (y * y + z * z)
-    yaw = np.arctan2 (t3, t4)
-
-    return np.degrees([roll, pitch, yaw])
-
-
-def quaternion_to_euler_df(dataframe): # result is different from Unity, idk why
-    """
-    Convert quaternions in a DataFrame to euler angles.
-    Assumes columns named 'L-QuaternionW', 'L-QuaternionX', 'L-QuaternionY', 'L-QuaternionZ'.
-    Returns a new DataFrame with columns 'Yaw', 'Pitch', 'Roll'.
-    """
-    def single_quaternion_to_euler(w, x, y, z):
-        # Roll (X-axis rotation)
-        sinr_cosp = 2 * (w * x + y * z)
-        cosr_cosp = 1 - 2 * (x * x + y * y)
-        roll = np.arctan2(sinr_cosp, cosr_cosp)
-
-        # Pitch (Y-axis rotation)
-        sinp = 2 * (w * y - z * x)
-        if abs(sinp) >= 1:
-            pitch = np.copysign(np.pi / 2, sinp)
-        else:
-            pitch = np.arcsin(sinp)
-
-        # Yaw (Z-axis rotation)
-        siny_cosp = 2 * (w * z + x * y)
-        cosy_cosp = 1 - 2 * (y * y + z * z)
-        yaw = np.arctan2(siny_cosp, cosy_cosp)
-
-        return np.degrees([yaw, pitch, roll])  # Convert to degrees
-
-    euler_angles = dataframe.apply(lambda row: single_quaternion_to_euler(
-        row['L-QuaternionW'], row['L-QuaternionX'], row['L-QuaternionY'], row['L-QuaternionZ']), axis=1)
-
-    return pd.DataFrame(euler_angles.tolist(), columns=['Yaw', 'Pitch', 'Roll'])
-
-
-def unity_quaternion_to_euler(x, y, z, w): # result is different from Unity, idk why
+def unity_quaternion_to_euler(x, y, z, w):  # result is different from Unity, idk why
     """
     Convert a Unity-style quaternion into euler angles (in degrees)
     """
@@ -311,82 +280,17 @@ def unity_quaternion_to_euler(x, y, z, w): # result is different from Unity, idk
 
     return np.degrees([yaw, pitch, roll])  # Convert to degrees
 
-# def read_data_name_from_json(filepath):
-#     with open(filepath, 'r', encoding='utf-8') as file:
-#         data = json.load(file)
-
-#     train_set=[]
-#     train_set_positive_label = []
-#     train_set_negative_label = []
-#     test_set = []
-
-#     # 处理 train_set
-#     # if data["scene"] and data["train_set_scene"]:
-#     #         raise Exception("scene and train_set_scene can't be both set")
-#     for item in data['train_set']['positive_label']:
-#         names = [item['names']] if isinstance(item['names'], str) else item['names']
-#         dates = [item['date']] if isinstance(item['date'], str) else item['date']
-#         range_ = item['range'] if item['range'] else 'all'
-#         namess=[]
-#         if data["scene"]:
-#             for name in names:
-#                 namess.append(data["scene"]+name)
-#         elif data["train_set_scene"]:
-#             for name in names:
-#                 namess.append(data["train_set_scene"]+name)
-#         else:
-#             namess=names
-#         for name, date in itertools.product(namess, dates):
-#             train_set.append([name, date, range_])
-#             train_set_positive_label.append([name, date, range_])
-    
-#     for item in data['train_set']['negative_label']:
-#         names = [item['names']] if isinstance(item['names'], str) else item['names']
-#         dates = [item['date']] if isinstance(item['date'], str) else item['date']
-#         range_ = item['range'] if item['range'] else 'all'
-#         namess=[]
-#         if data["scene"]:
-#             for name in names:
-#                 namess.append(data["scene"]+name)
-#         elif data["train_set_scene"]:
-#             for name in names:
-#                 namess.append(data["train_set_scene"]+name)
-#         else:
-#             namess=names
-#         for name, date in itertools.product(namess, dates):
-#             train_set.append([name, date, range_])
-#             train_set_negative_label.append([name, date, range_])
-
-#     # 处理 test_set
-#     if data["scene"] and data["test_set_scene"]:
-#             raise Exception("scene and test_set_scene can't be both set")
-#     for item in data['test_set']:
-#         names = [item['names']] if isinstance(item['names'], str) else item['names']
-#         dates = [item['date']] if isinstance(item['date'], str) else item['date']
-#         range_ = item['range'] if item['range'] else 'all'
-#         namess=[]
-#         if data["scene"]:
-#             for name in names:
-#                 namess.append(data["scene"]+name)
-#         elif data["test_set_scene"]:
-#             for name in names:
-#                 namess.append(data["test_set_scene"]+name)
-#         else:
-#             namess=names
-#         for name, date in itertools.product(namess, dates):
-#             test_set.append([name, date, range_])
-
-#     return train_set, train_set_positive_label, train_set_negative_label, test_set
-
 
 def range_to_int_value(range_str):
-        def range_to_int_start_end(range_str, value='start'):
-            values = list(map(int, range_str.split('-')))
-            return values[0] if value == 'start' else values[1]
-        return range_to_int_start_end(range_str, 'end')-range_to_int_start_end(range_str, 'start')
+    def range_to_int_start_end(range_str, value='start'):
+        values = list(map(int, range_str.split('-')))
+        return values[0] if value == 'start' else values[1]
+
+    return range_to_int_start_end(range_str, 'end') - range_to_int_start_end(range_str, 'start')
 
 
-def google_sheet_to_json(studytype = "study1", credential_path = "src/credentials.json", google_sheet_name = "被试招募", json_save_path= "src/data.json"):
+def google_sheet_to_json(studytype="study1", credential_path="src/credentials.json", google_sheet_name="被试招募",
+                         json_save_path="src/data.json"):
     import gspread
     def map_names_to_numbers(names):
         name_to_number = {}
@@ -421,7 +325,7 @@ def google_sheet_to_json(studytype = "study1", credential_path = "src/credential
 
     data_list = []
 
-    for i in range(last_occurrence-first_occurrence+1):  # Adjust the range as needed
+    for i in range(last_occurrence - first_occurrence + 1):  # Adjust the range as needed
         # Generate or collect your data
         data_item = {
             "studytype": studytype,
@@ -447,20 +351,26 @@ def add_noise(data, noise_level=0.1):
     return data_noisy
 
 
-# 1231update segment_data_dir为切断的文件路径
-def feature_process_quaternion(segment_data_dir=None, eye_data_dir=None, head_data_dir=None, noise_flag=False, noise_level=0.1):
+def head_eye_slice_quaternion_read(head_data_dir=None, eye_data_dir=None, segment_data_dir=None):
+    data_head = pd.read_csv(head_data_dir)
+    data_eye = pd.read_csv(eye_data_dir)
     # 切段文件是否存在, 不存在就用默认的切片方法
     ranges = None
-    if segment_data_dir is not None:
-        if not os.path.exists(segment_data_dir):
-            warnings.warn(f"The file {segment_data_dir} does not exist.", Warning)
-        else:
-            with open(segment_data_dir, 'r') as file:
-                text_data = file.read().strip()
-                # Parse the ranges from the text data
-                ranges = [list(map(int, r.split('-'))) for r in text_data.split(';') if r]
+    if not os.path.exists(segment_data_dir):
+        warnings.warn(f"The file {segment_data_dir} does not exist.", Warning)
+    else:
+        with open(segment_data_dir, 'r') as file:
+            text_data = file.read().strip()
+            # Parse the ranges from the text data
+            ranges = [list(map(int, r.split('-'))) for r in text_data.split(';') if r]
 
-    data_head = pd.read_csv(head_data_dir)
+    return data_head, data_eye, ranges
+
+
+# 1231update segment_data_dir为切断的文件路径
+def feature_process_quaternion(data_head=None, data_eye=None, ranges=None, segment_data_dir=None, eye_data_dir=None,
+                               head_data_dir=None,
+                               noise_flag=False, noise_level=0.1):
     # 头的四元组
     QuaternionX_data = data_head['H-QuaternionX']
     if noise_flag:
@@ -475,21 +385,21 @@ def feature_process_quaternion(segment_data_dir=None, eye_data_dir=None, head_da
     QuaternionY_data = QuaternionY_data - np.mean(QuaternionY_data[0:5])
     QuaternionY_data_smoothed = smooth_data(QuaternionY_data)
     d2 = np.array(QuaternionY_data_smoothed)
-    d2_feat = extract_features(d2)
+    d2_feat = extract_features(d2, ranges=ranges)
     QuaternionZ_data = data_head['H-QuaternionZ']
     if noise_flag:
         QuaternionZ_data = add_noise(QuaternionZ_data, noise_level)
     QuaternionZ_data = QuaternionZ_data - np.mean(QuaternionZ_data[0:5])
     QuaternionZ_data_smoothed = smooth_data(QuaternionZ_data)
     d3 = np.array(QuaternionZ_data_smoothed)
-    d3_feat = extract_features(d3)
+    d3_feat = extract_features(d3, ranges=ranges)
     QuaternionW_data = data_head['H-QuaternionW']
     if noise_flag:
         QuaternionW_data = add_noise(QuaternionW_data, noise_level)
     QuaternionW_data = QuaternionW_data - np.mean(QuaternionW_data[0:5])
     QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
     d4 = np.array(QuaternionW_data_smoothed)
-    d4_feat = extract_features(d4)
+    d4_feat = extract_features(d4, ranges=ranges)
     # 头的坐标
     Vector3X_data = data_head['H-Vector3X']
     if noise_flag:
@@ -497,52 +407,51 @@ def feature_process_quaternion(segment_data_dir=None, eye_data_dir=None, head_da
     Vector3X_data = Vector3X_data - np.mean(Vector3X_data[0:5])
     Vector3X_data_smoothed = smooth_data(Vector3X_data)
     v1 = np.array(Vector3X_data_smoothed)
-    v1_feat = extract_features(v1)
+    v1_feat = extract_features(v1, ranges=ranges)
     Vector3Y_data = data_head['H-Vector3Y']
     if noise_flag:
         Vector3Y_data = add_noise(Vector3Y_data, noise_level)
     Vector3Y_data = Vector3Y_data - np.mean(Vector3Y_data[0:5])
     Vector3Y_data_smoothed = smooth_data(Vector3Y_data)
     v2 = np.array(Vector3Y_data_smoothed)
-    v2_feat = extract_features(v2)
+    v2_feat = extract_features(v2, ranges=ranges)
     Vector3Z_data = data_head['H-Vector3Z']
     if noise_flag:
         Vector3Z_data = add_noise(Vector3Z_data, noise_level)
     Vector3Z_data = Vector3Z_data - np.mean(Vector3Z_data[0:5])
     Vector3Z_data_smoothed = smooth_data(Vector3Z_data)
     v3 = np.array(Vector3Z_data_smoothed)
-    v3_feat = extract_features(v3)
+    v3_feat = extract_features(v3, ranges=ranges)
 
     # 眼睛的四元组
-    data_eye = pd.read_csv(eye_data_dir)
     QuaternionX_data = data_eye['L-QuaternionX']
     if noise_flag:
         QuaternionX_data = add_noise(QuaternionX_data, noise_level)
     QuaternionX_data = QuaternionX_data - np.mean(QuaternionX_data[0:5])
     QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
     d1_el = np.array(QuaternionX_data_smoothed)
-    d1_el_feat = extract_features(d1_el)
+    d1_el_feat = extract_features(d1_el, ranges=ranges)
     QuaternionY_data = data_eye['L-QuaternionY']
     if noise_flag:
         QuaternionY_data = add_noise(QuaternionY_data, noise_level)
     QuaternionY_data = QuaternionY_data - np.mean(QuaternionY_data[0:5])
     QuaternionY_data_smoothed = smooth_data(QuaternionY_data)
     d2_el = np.array(QuaternionY_data_smoothed)
-    d2_el_feat = extract_features(d2_el)
+    d2_el_feat = extract_features(d2_el, ranges=ranges)
     QuaternionZ_data = data_eye['L-QuaternionZ']
     if noise_flag:
         QuaternionZ_data = add_noise(QuaternionZ_data, noise_level)
     QuaternionZ_data = QuaternionZ_data - np.mean(QuaternionZ_data[0:5])
     QuaternionZ_data_smoothed = smooth_data(QuaternionZ_data)
     d3_el = np.array(QuaternionZ_data_smoothed)
-    d3_el_feat = extract_features(d3_el)
+    d3_el_feat = extract_features(d3_el, ranges=ranges)
     QuaternionW_data = data_eye['L-QuaternionW']
     if noise_flag:
         QuaternionW_data = add_noise(QuaternionW_data, noise_level)
     QuaternionW_data = QuaternionW_data - np.mean(QuaternionW_data[0:5])
     QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
     d4_el = np.array(QuaternionW_data_smoothed)
-    d4_el_feat = extract_features(d4_el)
+    d4_el_feat = extract_features(d4_el, ranges=ranges)
 
     QuaternionX_data = data_eye['R-QuaternionX']
     if noise_flag:
@@ -550,30 +459,30 @@ def feature_process_quaternion(segment_data_dir=None, eye_data_dir=None, head_da
     QuaternionX_data = QuaternionX_data - np.mean(QuaternionX_data[0:5])
     QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
     d1_er = np.array(QuaternionX_data_smoothed)
-    d1_er_feat = extract_features(d1_er)
+    d1_er_feat = extract_features(d1_er, ranges=ranges)
     QuaternionY_data = data_eye['R-QuaternionY']
     if noise_flag:
         QuaternionY_data = add_noise(QuaternionY_data, noise_level)
     QuaternionY_data = QuaternionY_data - np.mean(QuaternionY_data[0:5])
     QuaternionY_data_smoothed = smooth_data(QuaternionY_data)
     d2_er = np.array(QuaternionY_data_smoothed)
-    d2_er_feat = extract_features(d2_er)
+    d2_er_feat = extract_features(d2_er, ranges=ranges)
     QuaternionZ_data = data_eye['R-QuaternionZ']
     if noise_flag:
         QuaternionZ_data = add_noise(QuaternionZ_data, noise_level)
     QuaternionZ_data = QuaternionZ_data - np.mean(QuaternionZ_data[0:5])
     QuaternionZ_data_smoothed = smooth_data(QuaternionZ_data)
     d3_er = np.array(QuaternionZ_data_smoothed)
-    d3_er_feat = extract_features(d3_er)
+    d3_er_feat = extract_features(d3_er, ranges=ranges)
     QuaternionW_data = data_eye['R-QuaternionW']
     if noise_flag:
         QuaternionW_data = add_noise(QuaternionW_data, noise_level)
     QuaternionW_data = QuaternionW_data - np.mean(QuaternionW_data[0:5])
     QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
     d4_er = np.array(QuaternionW_data_smoothed)
-    d4_er_feat = extract_features(d4_er)
+    d4_er_feat = extract_features(d4_er, ranges=ranges)
 
-    return d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat,\
+    return d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, \
         d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat
 
 
@@ -648,70 +557,71 @@ def feature_process_angle(eye_data_dir=None, head_data_dir=None, noise_flag=Fals
     d3_er = np.array(Roll_data_smoothed)
     d3_er_feat = extract_features(d3_er)
 
-    return d1, d1_feat, d2, d2_feat, d3, d3_feat, d1_el, d1_el_feat,\
+    return d1, d1_feat, d2, d2_feat, d3, d3_feat, d1_el, d1_el_feat, \
         d2_el, d2_el_feat, d3_el, d3_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat
 
 
-def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag=None, noise_level=0.1): # num从1开始
-    # member是studytype_user_date
-    studytype = member.split('_')[0]
-    date = member.split('_')[2]
-    user = member.split('_')[1]
+def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, model, rotdir, noise_flag=None,
+                           noise_level=0.1):  # num从1开始
+
     # 四元组 calculate为世界坐标，raw为头部局域坐标下的旋转数值
-    d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el,\
-        d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er,\
-        d4_er_feat = feature_process_quaternion(segment_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Saccades_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.txt",
-                                                head_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
-                                                eye_data_dir=rotdir + f"VRAuthStudy1-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
+    d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el, \
+        d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, \
+        d4_er_feat = feature_process_quaternion(data_head=data_head, data_eye=data_eye, ranges=ranges,
                                                 noise_flag=noise_flag, noise_level=noise_level)
-    # 角度 calculate为世界坐标，raw为头部局域坐标下的旋转数值
-    # d1, d1_feat, d2, d2_feat, d3, d3_feat, d1_el, d1_el_feat, d2_el, d2_el_feat, d3_el, d3_el_feat, \
-    #     d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, \
-    #     d3_er_feat = feature_process_angle(head_data_dir=rotdir + f"VRAuthStudy1Angle-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
-    #                                             eye_data_dir=rotdir + f"VRAuthStudy1Angle-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv",
-    #                                             noise_flag=noise_flag, noise_level=noise_level)
-    # 头眼差值
-    diff_yaw_data = difference_gaze_head(member, size, pin, num, rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
-    diff_yaw_smooth = smooth_data(diff_yaw_data, window_parameter=9)
-    dy_el_feat = extract_features(np.array(diff_yaw_smooth))
-    diff_pitch_data = difference_gaze_head(member, size, pin, num, eye='L', angle='Pitch', rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
-    diff_pitch_smooth = smooth_data(diff_pitch_data, window_parameter=9)
-    dp_el_feat = extract_features(np.array(diff_pitch_smooth))
-    diff_roll_data = difference_gaze_head(member, size, pin, num, eye='L', angle='Roll', rotdir=rotdir, noise_flag=noise_flag, noise_level=noise_level)
-    diff_roll_smooth = smooth_data(diff_roll_data, window_parameter=9)
-    dr_el_feat = extract_features(np.array(diff_roll_smooth))
 
     if model == 'head':
         merged_array = np.concatenate(
             [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat])
-            # [d1_feat, d2_feat, d3_feat])
+        # [d1_feat, d2_feat, d3_feat])
 
     # 利用特征：切10段的特征
     elif model == "eye":
         merged_array = np.concatenate(
             [d1_el_feat, d2_el_feat, d3_el_feat,
-                d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, ])
+             d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, ])
     elif model == "head+eye":
         # 利用特征：切10段的特征
         merged_array = np.concatenate(
             [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat,
-                d3_el_feat,
-                d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, ])
+             d3_el_feat,
+             d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, ])
     elif model == "diff":
+        diff_yaw_data = difference_gaze_head(member, size, pin, num, rotdir=rotdir, noise_flag=noise_flag,
+                                             noise_level=noise_level)
+        diff_yaw_smooth = smooth_data(diff_yaw_data, window_parameter=9)
+        dy_el_feat = extract_features(np.array(diff_yaw_smooth))
+        diff_pitch_data = difference_gaze_head(member, size, pin, num, eye='L', angle='Pitch', rotdir=rotdir,
+                                               noise_flag=noise_flag, noise_level=noise_level)
+        diff_pitch_smooth = smooth_data(diff_pitch_data, window_parameter=9)
+        dp_el_feat = extract_features(np.array(diff_pitch_smooth))
+        diff_roll_data = difference_gaze_head(member, size, pin, num, eye='L', angle='Roll', rotdir=rotdir,
+                                              noise_flag=noise_flag, noise_level=noise_level)
+        diff_roll_smooth = smooth_data(diff_roll_data, window_parameter=9)
+        dr_el_feat = extract_features(np.array(diff_roll_smooth))
         # 利用特征：切10段的特征
         merged_array = np.concatenate([dy_el_feat, dp_el_feat, dr_el_feat]
-        )
-    elif model == "eye+diff":
-        merged_array = np.concatenate([dy_el_feat, dp_el_feat,
-                                        dr_el_feat, d1_el_feat, d2_el_feat, d3_el_feat,
-                d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat]
-        )
+                                      )
+
     else:
+        diff_yaw_data = difference_gaze_head(member, size, pin, num, rotdir=rotdir, noise_flag=noise_flag,
+                                             noise_level=noise_level)
+        diff_yaw_smooth = smooth_data(diff_yaw_data, window_parameter=9)
+        dy_el_feat = extract_features(np.array(diff_yaw_smooth))
+        diff_pitch_data = difference_gaze_head(member, size, pin, num, eye='L', angle='Pitch', rotdir=rotdir,
+                                               noise_flag=noise_flag, noise_level=noise_level)
+        diff_pitch_smooth = smooth_data(diff_pitch_data, window_parameter=9)
+        dp_el_feat = extract_features(np.array(diff_pitch_smooth))
+        diff_roll_data = difference_gaze_head(member, size, pin, num, eye='L', angle='Roll', rotdir=rotdir,
+                                              noise_flag=noise_flag, noise_level=noise_level)
+        diff_roll_smooth = smooth_data(diff_roll_data, window_parameter=9)
+        dr_el_feat = extract_features(np.array(diff_roll_smooth))
         merged_array = np.concatenate(
             [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat,
-                d3_el_feat,
-                d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat,
-                dy_el_feat, dp_el_feat, dr_el_feat])
+             d3_el_feat,
+             d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat,
+             dy_el_feat, dp_el_feat, dr_el_feat])
+
     # print(d1)
     if np.isnan(d1_feat).any():
         print("NaN values found in d1_feat")
@@ -721,5 +631,115 @@ def merged_array_generator(member, size, pin, num, model, rotdir, noise_flag=Non
     #     print("user" + user + "data" + str(merged_array))
     return merged_array
 
-# read_data_name_from_json()
-# google_sheet_to_json(studytype="study2")
+
+# 返回整理好的能用于模型训练测试的X和Y
+def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", size_list=None,
+                           pin_list=None, default_authentications_per_person=6,
+                           positive_label=None, noise_level=0.1, augment_time=1):  # 返回scaled后的原始数据和标签，scaled后的增强后的数据和标签
+
+    studytype_user_date_size_pin_num_pair = []  # studytype, user, date, size, pin, num 的所有排列组合，用于数据增强时循环增强所有正标签里的数据
+    result_array = np.array([])
+    studytype = studytype_users_dates_range[0].split('_')[0]  # studytype只有一种
+    labels = []
+    binary_labels = []
+
+    for member in studytype_users_dates_range:
+        user = member.split('_')[1]
+        date = member.split('_')[2]
+        num_range = member.split('_')[3]
+        range_start = int(num_range.split('-')[0]) if num_range else 1
+        range_end = int(num_range.split('-')[1]) if num_range else default_authentications_per_person
+
+        # 全部可能的组合
+        studytype_user_date_size_pin_num_pair.extend([x for x in
+                                                      itertools.product([studytype], [user], [date], size_list,
+                                                                        pin_list, range(range_start, range_end + 1))])
+
+        # 标签的生成，按照人名的唯一性
+        labels.extend(np.repeat(user, len(size_list) * len(pin_list) * (range_end - range_start + 1) * augment_time))
+        binary_labels.extend([1 if user in positive_label else 0 for _ in
+                              range(len(size_list) * len(pin_list) * (range_end - range_start + 1) * augment_time)])
+
+        # 特征拼接，数据增强
+        for size in size_list:
+            for pin in pin_list:
+                for num in range(range_start, range_end + 1):
+                    # 文件读取
+                    head_path = rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
+                    eye_path = rotdir + f"VRAuthStudy1-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
+                    segment_path = rotdir + f"VRAuthStudy1-{date}/P{user}/Saccades_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.txt"
+                    data_head, data_eye, ranges = head_eye_slice_quaternion_read(head_data_dir=head_path,
+                                                                                 eye_data_dir=eye_path,
+                                                                                 segment_data_dir=segment_path)
+                    # 1.1 update 数据增强
+                    for i in range(1, augment_time + 1):
+                        noise_flag = False if i == 1 else True  # 增强倍数大于1则选择增强
+
+                        # 对于该增强噪声的水平 返回该member, size, pin, num的特征, 返回一维X向量
+                        merged_array = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
+                                                              member=member, rotdir=rotdir, model=model, size=size, pin=pin,
+                                                              num=num, noise_flag=noise_flag, noise_level=noise_level)
+                        # 将所有特征堆叠起来，每一行是一个特征
+                        result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array
+
+    scaled_data = result_array
+
+    # 识别正类样本
+    positive_indices = np.where(binary_labels == 1)[0]
+
+    # 确定增强的正样本数量以达到大约50%的正样本比例
+    total_samples_needed = len(binary_labels)  # 总样本数
+    positive_samples_needed = int(total_samples_needed) - 2 * len(positive_indices)  # 需要增强的正样本数
+
+    # 如果需要增强的样本数为负数或零，则不执行任何操作
+    if positive_samples_needed > 0:
+        # 选择正样本进行复制和添加噪声
+        users_to_copy = np.random.choice(positive_label, size=positive_samples_needed, replace=True)
+        loop_num = 0
+        index = 0
+        positive_features_to_augment = np.array([])
+        # studytype user date size pin num
+
+        while loop_num < positive_samples_needed:
+            user_to_copy = users_to_copy[loop_num]
+            studytype_user_date_size_pin_num_pair_to_copy = [x for x in studytype_user_date_size_pin_num_pair if
+                                                             x[1] == user_to_copy]  # user_to_copy的所有组合
+            studytype_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][0]
+            date_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][2]
+            size_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][3]
+            pin_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][4]
+            num_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][5]
+
+            member_to_copy = f"{studytype_to_copy}_{user_to_copy}_{date_to_copy}"  # 用于merged_array_generator的member参数
+            head_path = rotdir + f"VRAuthStudy1-{date_to_copy}/P{user_to_copy}/Head_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
+            eye_path = rotdir + f"VRAuthStudy1-{date_to_copy}/P{user_to_copy}/GazeCalculate_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
+            segment_path = rotdir + f"VRAuthStudy1-{date_to_copy}/P{user_to_copy}/Saccades_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.txt"
+            data_head, data_eye, ranges = head_eye_slice_quaternion_read(head_data_dir=head_path,
+                                                                         eye_data_dir=eye_path,
+                                                                         segment_data_dir=segment_path)
+
+            merged_array_augmented = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
+                                                            member=member_to_copy, rotdir=rotdir, model=model,
+                                                            size=size_to_copy, pin=pin_to_copy, num=num_to_copy,
+                                                            noise_flag=True, noise_level=noise_level)
+
+            positive_features_to_augment = np.vstack([positive_features_to_augment,
+                                                      merged_array_augmented]) if positive_features_to_augment.size else merged_array_augmented
+
+            index = (index + 1) % len(studytype_user_date_size_pin_num_pair_to_copy)
+
+            loop_num += 1
+
+        # 将增强的样本合并回原始数据集
+        result_array_augmented = np.concatenate((result_array, positive_features_to_augment), axis=0)
+        # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
+        binary_labels_augmented = np.concatenate((binary_labels, [1 for _ in range(positive_samples_needed)]), axis=0)
+        scaled_data_augmented = result_array_augmented
+    else:
+        # 如果不需要增加正样本，则保持原始数据不变
+        scaled_data_augmented = scaled_data
+        # label_augmented = labels
+        binary_labels_augmented = binary_labels
+
+    return scaled_data, np.array(labels), np.array(binary_labels), scaled_data_augmented, np.array(
+        binary_labels_augmented)
