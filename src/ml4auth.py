@@ -282,8 +282,9 @@ def knn4con_binary_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, binary_la
     average_f1s = np.mean(f1s)
     average_fars = np.mean(fars)
     average_frrs = np.mean(frrs)
-    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-          "\nf1s:", average_f1s, "\nfars:", average_fars, "\nfrrs:", average_frrs)
+    # print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+    #       "\nf1s:", average_f1s, "\nfars:", average_fars, "\nfrrs:", average_frrs)
+    print(average_f1s)
 
 
 ################################################################ knn kfold 多分类
@@ -327,8 +328,9 @@ def knn4con_multi_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, labels=Non
     average_recalls = np.mean(recalls)
     average_f1s = np.mean(f1s)
 
-    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-          "\nf1s:", average_f1s)
+    # print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+    #       "\nf1s:", average_f1s)
+    print(average_f1s)
 
 
 ################################################################ svm kfold 二分类
@@ -398,8 +400,9 @@ def svm4con_binary_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_sca
     average_f1s = np.mean(f1s)
     average_fars = np.mean(fars)
     average_frrs = np.mean(frrs)
-    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-          "\nf1s:", average_f1s, "\nfars:", average_fars, "\nfrrs:", average_frrs)
+    # print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+    #       "\nf1s:", average_f1s, "\nfars:", average_fars, "\nfrrs:", average_frrs)
+    print(average_f1s)
 
 
 ################################################################ svm kfold 多分类
@@ -448,8 +451,9 @@ def svm4con_multi_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scal
     average_recalls = np.mean(recalls)
     average_f1s = np.mean(f1s)
 
-    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-          "\nf1s:", average_f1s)
+    # print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+    #       "\nf1s:", average_f1s)
+    print(average_f1s)
 
 
 ################################################################ main
@@ -460,7 +464,7 @@ def main():
     n_split = 3  # k fold
     kernel = "linear"  # svm
     noise_level = 0.3  # noise level
-    augmentation_time = 10  # 高斯噪声做数据增强的倍数
+    augmentation_time = 2  # 高斯噪声做数据增强的倍数
 
     # 1.1update augment_time表示增强为原来数量的多少倍，如果留空则为默认值1，即全部为原始数据
     data_scaled, labels, binary_labels, scaled_data_augmented, binary_labels_augmented = data_augment_and_label(
@@ -475,7 +479,7 @@ def main():
     # print(f"scaler_origin:{scaler_origin.mean_}, scaler_augment:{scaler_augment.mean_}")
     # 原数据和标签跑机器学习模型
     print("")
-    print("original data")
+    print("Proportional augmented data")
 
     print("---------knn_binary_kfold------------")
     knn4con_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
@@ -495,7 +499,7 @@ def main():
 
     # 数据增强后的数据和标签跑模型
     print("")
-    print("augmented data")
+    print("Binary augmented data to 50% P/N ratio")
 
     print("---------knn_binary_kfold------------")
     knn4con_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
@@ -506,37 +510,37 @@ def main():
                           n_splits=n_split, kernel=kernel)
 
 
-    ################################ 随时间推移重新检验部分
-    # 日后新采的数据属性
-    default_latter_auth_per_person = 4  # 每人采集次数
-    latter_positive_label = positive_label  # 正样本, 与之前是一致的
+    # ################################ 随时间推移重新检验部分
+    # # 日后新采的数据属性
+    # default_latter_auth_per_person = 4  # 每人采集次数
+    # latter_positive_label = positive_label  # 正样本, 与之前是一致的
 
-    latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
-        default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
-        positive_label=latter_positive_label, model=model,
-        studytype_users_dates_range=read_data_latter_data_json()[1],
-        size_list=[3], pin_list=[14], noise_level=noise_level)
+    # latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
+    #     default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
+    #     positive_label=latter_positive_label, model=model,
+    #     studytype_users_dates_range=read_data_latter_data_json()[1],
+    #     size_list=[3], pin_list=[14], noise_level=noise_level)
 
-    print("")
-    print(f"latter_data_scaled: {latter_data_scaled.shape}")
-    print("")
+    # print("")
+    # print(f"latter_data_scaled: {latter_data_scaled.shape}")
+    # print("")
 
-    print("--------knn_binary------------")
-    knn4con_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-                   latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
+    # print("--------knn_binary------------")
+    # knn4con_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+    #                latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
 
-    print("---------knn_multi------------")
-    knn4con_multi(data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled,
-                  latter_labels=latter_labels)
+    # print("---------knn_multi------------")
+    # knn4con_multi(data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled,
+    #               latter_labels=latter_labels)
 
-    print("---------svm_binary------------")
-    svm4con_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-                   latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
+    # print("---------svm_binary------------")
+    # svm4con_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+    #                latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
 
-    print("---------svm_multi------------")
-    svm4con_multi(data_scaled=data_scaled, labels=labels,
-                  latter_data_scaled=latter_data_scaled, latter_labels=latter_labels
-                  )
+    # print("---------svm_multi------------")
+    # svm4con_multi(data_scaled=data_scaled, labels=labels,
+    #               latter_data_scaled=latter_data_scaled, latter_labels=latter_labels
+    #               )
 
 
 if __name__ == "__main__":

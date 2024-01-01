@@ -114,7 +114,7 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     # 1阶导
     seq_second = get_n_derivation_features(np.diff(sequence), ranges)
 
-    seq_all = np.concatenate([seq_initial, seq_second])
+    seq_all = np.concatenate([seq_initial])
     return seq_all
 
 
@@ -177,8 +177,9 @@ def get_n_derivation_features(sequence, ranges):
         features_wamp.append(wamp)  # zero
         features_ssc.append(ssc)  # low
 
-    return np.concatenate([features_max
-                           ])
+    return np.concatenate([features_mean, features_max, features_min, features_var, features_median, features_rms, 
+                            features_std, features_mad, features_kurtosis, features_skewness, features_iqr,
+                            features_mc, features_wamp, features_ssc])
 
 
 def difference_gaze_lr_euler_angle(user, date, num):  # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
@@ -729,6 +730,9 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
 
         # 将增强的样本合并回原始数据集
         result_array_augmented = np.concatenate((result_array, positive_features_to_augment), axis=0)
+        print(f"result_array.shape: {result_array.shape}")
+        print(f"positive_features_to_augment.shape: {positive_features_to_augment.shape}")
+        print(f"result_array_augmented.shape: {result_array_augmented.shape}")
         # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
         binary_labels_augmented = np.concatenate((binary_labels, [1 for _ in range(positive_samples_needed)]), axis=0)
         scaled_data_augmented = result_array_augmented
