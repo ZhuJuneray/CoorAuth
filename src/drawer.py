@@ -4,7 +4,6 @@ import numpy as np
 from scipy.signal import savgol_filter
 from cycler import cycler
 import os
-from data_preprocess import unity_quaternion_to_euler
 from data_preprocess import replace_local_outliers
 from data_preprocess import smooth_data
 from data_preprocess import extract_features
@@ -20,9 +19,9 @@ from collections import defaultdict
 # os.chdir(os.path.join(os.getcwd(),'data'))
 
 # ---need to modify regarding your csv file name---
-user_names=["zjr","zs"]
-dates="1102"
-repeat_num=3
+user_names = ["zjr", "zs"]
+dates = "1102"
+repeat_num = 3
 
 
 #---modify end---
