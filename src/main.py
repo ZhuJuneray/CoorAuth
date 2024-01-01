@@ -12,7 +12,7 @@ def main():
     model = 'head'  # model
     n_split = 3  # k fold
     noise_level = 0.3  # noise level
-    augmentation_time = 2  # 高斯噪声做数据增强的倍数
+    augmentation_time = 1  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
     pin_list = [14]  # pin list
 
@@ -39,13 +39,13 @@ def main():
     # knn_multi_kfolds(data_scaled=data_scaled, labels=labels,
     #                  n_splits=n_split)
     #
-    # print("----------svm_binary_kfold------------")
-    # svm_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
-    #                   n_splits=n_split)
-    #
-    # print("-----------svm_multi_kfold------------")
-    # svm_multi_kfolds(data_scaled=data_scaled, labels=labels,
-    #                  n_splits=n_split)
+    print("----------svm_binary_kfold------------")
+    svm_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
+                      n_splits=n_split)
+
+    print("-----------svm_multi_kfold------------")
+    svm_multi_kfolds(data_scaled=data_scaled, labels=labels,
+                     n_splits=n_split)
 
     print("------------mlp_binary_kfold------------")
     mlp_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
@@ -54,6 +54,7 @@ def main():
     print("------------mlp_multi_kfold------------")
     mlp_multi_kfolds(data_scaled=data_scaled, labels=labels,
                      n_splits=n_split)
+
     # 数据增强后的数据和标签跑模型
     print("")
     print("data augment for binary")

@@ -4,8 +4,6 @@ from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKF
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, classification_report
-import os, json, re, sys
-from data_preprocess import data_augment_and_label, read_data_latter_data_json
 
 
 ################################################################ knn 二分类

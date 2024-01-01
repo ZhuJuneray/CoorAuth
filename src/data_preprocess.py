@@ -163,11 +163,11 @@ def get_n_derivation_features(sequence, ranges):
         features_mean.append(mean)  # high
         features_max.append(max_value)  # high
         features_min.append(min_value)  # high
-        features_var.append(variance)
+        features_var.append(variance)   
         features_median.append(median)  # high
-        features_rms.append(rms)
-        features_std.append(std_dev)
-        features_mad.append(mad)
+        features_rms.append(rms)        
+        features_std.append(std_dev)    
+        features_mad.append(mad)        
         features_kurtosis.append(kurt)  # low
         features_skewness.append(skewness)  # low
         features_iqr.append(iqr)  # mid
@@ -177,10 +177,7 @@ def get_n_derivation_features(sequence, ranges):
         features_wamp.append(wamp)  # zero
         features_ssc.append(ssc)  # low
 
-    # return np.concatenate([features_mean, features_max, features_min, features_var,
-    #                        features_median, features_rms, features_std, features_mad,
-    #                         features_iqr, features_mc, features_wamp, features_ssc])
-    return np.concatenate([features_mean, features_max, features_min, features_var,
+    return np.concatenate([features_max
                            ])
 
 
@@ -368,8 +365,7 @@ def head_eye_slice_quaternion_read(head_data_dir=None, eye_data_dir=None, segmen
 
 
 # 1231update segment_data_dir为切断的文件路径
-def feature_process_quaternion(data_head=None, data_eye=None, ranges=None, segment_data_dir=None, eye_data_dir=None,
-                               head_data_dir=None,
+def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
                                noise_flag=False, noise_level=0.1):
     # 头的四元组
     QuaternionX_data = data_head['H-QuaternionX']
@@ -627,8 +623,7 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
         print("NaN values found in d1_feat")
         # 定位NaN值
         print(np.argwhere(np.isnan(d1_feat)))
-    # if num == 1:
-    #     print("user" + user + "data" + str(merged_array))
+
     return merged_array
 
 
