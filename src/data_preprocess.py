@@ -10,7 +10,7 @@ import itertools
 import warnings
 
 
-def read_data_latter_data_json(filepath=os.path.join(os.getcwd(), "src/data.json")):
+def read_data_latter_data_json(filepath="D:\pycharm\srt_vr_auth\src\data.json"):
     with open(filepath, 'r', encoding='utf-8') as file:
         data = json.load(file)
     data_list = [f"{item['studytype']}_{item['names']}_{item['date']}_{item['num_range']}" for item in data['data']]
@@ -366,8 +366,7 @@ def head_eye_slice_quaternion_read(head_data_dir=None, eye_data_dir=None, segmen
 
 
 # 1231update segment_data_dir为切断的文件路径
-def feature_process_quaternion(data_head=None, data_eye=None, ranges=None, segment_data_dir=None, eye_data_dir=None,
-                               head_data_dir=None,
+def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
                                noise_flag=False, noise_level=0.1):
     # 头的四元组
     QuaternionX_data = data_head['H-QuaternionX']
@@ -625,8 +624,7 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
         print("NaN values found in d1_feat")
         # 定位NaN值
         print(np.argwhere(np.isnan(d1_feat)))
-    # if num == 1:
-    #     print("user" + user + "data" + str(merged_array))
+
     return merged_array
 
 

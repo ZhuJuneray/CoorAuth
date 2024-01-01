@@ -1,19 +1,14 @@
 import numpy as np
-import pandas as pd
-from scipy.signal import savgol_filter
-from scipy.stats import kurtosis, skew
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, classification_report
-import os, json, re, sys
-from data_preprocess import data_augment_and_label, read_data_latter_data_json
 from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, classification_report
 
 
 ################################################################ knn 二分类
-def knn4con_binary(n_neighbors=3,
-                   data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None):
+def knn_binary(n_neighbors=3,
+               data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None):
     # 生成示例数据
     # labels = np.repeat(np.arange(num_people), authentications_per_person)
 
@@ -78,8 +73,8 @@ def knn4con_binary(n_neighbors=3,
 
 
 ################################################################ knn 多分类
-def knn4con_multi(n_neighbors=3,
-                  data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
+def knn_multi(n_neighbors=3,
+              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
     # 划分数据集
     X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
     # print("testing shape:", X_test.shape)
@@ -125,9 +120,9 @@ def knn4con_multi(n_neighbors=3,
 
 
 ################################################################ svm 二分类
-def svm4con_binary(kernel="linear", C=1, gamma=0.02,
-                   data_scaled=None, binary_labels=None
-                   , latter_data_scaled=None, latter_labels=None):
+def svm_binary(kernel="linear", C=1, gamma=0.02,
+               data_scaled=None, binary_labels=None
+               , latter_data_scaled=None, latter_labels=None):
     # 划分数据集
     X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
     # print("testing shape:", X_test.shape)
@@ -182,8 +177,8 @@ def svm4con_binary(kernel="linear", C=1, gamma=0.02,
 
 
 ################################################################ svm 多分类
-def svm4con_multi(kernel="linear", C=1, gamma=0.02,
-                  data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
+def svm_multi(kernel="linear", C=1, gamma=0.02,
+              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
     # 划分数据集
     X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
 
@@ -222,7 +217,7 @@ def svm4con_multi(kernel="linear", C=1, gamma=0.02,
 
 
 ################################################################ knn kfold 二分类
-def knn4con_binary_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, binary_labels=None):
+def knn_binary_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, binary_labels=None):
     for label in np.unique(binary_labels):
         count = np.sum(binary_labels == label)
         # print(f"Class {label}: {count} samples")
@@ -288,7 +283,7 @@ def knn4con_binary_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, binary_la
 
 
 ################################################################ knn kfold 多分类
-def knn4con_multi_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, labels=None):
+def knn_multi_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, labels=None):
     # 生成示例数据
     for label in np.unique(labels):
         count = np.sum(labels == label)
@@ -334,7 +329,7 @@ def knn4con_multi_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, labels=Non
 
 
 ################################################################ svm kfold 二分类
-def svm4con_binary_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scaled=None, binary_labels=None):
+def svm_binary_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scaled=None, binary_labels=None):
     for label in np.unique(binary_labels):
         count = np.sum(binary_labels == label)
         # print(f"Class {label}: {count} samples")
@@ -406,7 +401,7 @@ def svm4con_binary_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_sca
 
 
 ################################################################ svm kfold 多分类
-def svm4con_multi_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scaled=None, labels=None):
+def svm_multi_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scaled=None, labels=None):
     for label in np.unique(labels):
         count = np.sum(labels == label)
         # print(f"Class {label}: {count} samples")
@@ -451,106 +446,5 @@ def svm4con_multi_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scal
     average_recalls = np.mean(recalls)
     average_f1s = np.mean(f1s)
 
-    # print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-    #       "\nf1s:", average_f1s)
-    print(average_f1s)
-
-
-################################################################ main
-def main():
-    # os.chdir('D:\pycharm\srt_vr_auth')  # cwd的绝对路径
-    positive_label = ['7']  # 正样本
-    model = 'head'  # model
-    n_split = 3  # k fold
-    kernel = "linear"  # svm
-    noise_level = 0.3  # noise level
-    augmentation_time = 2  # 高斯噪声做数据增强的倍数
-
-    # 1.1update augment_time表示增强为原来数量的多少倍，如果留空则为默认值1，即全部为原始数据
-    data_scaled, labels, binary_labels, scaled_data_augmented, binary_labels_augmented = data_augment_and_label(
-        default_authentications_per_person=9, rotdir=os.path.join(os.getcwd(), "data/"), positive_label=positive_label,
-        model=model, studytype_users_dates_range=read_data_latter_data_json()[0], size_list=[3], pin_list=[14],
-        noise_level=noise_level, augment_time=augmentation_time)
-
-    print(f"labels:{labels}")
-    print(f"binary_labels:{binary_labels}")
-    print(f"binary_labels_augmented:{binary_labels_augmented}")
-    print(f"data_scaled:{data_scaled.shape}")
-    # print(f"scaler_origin:{scaler_origin.mean_}, scaler_augment:{scaler_augment.mean_}")
-    # 原数据和标签跑机器学习模型
-    print("")
-    print("Proportional augmented data")
-
-    print("---------knn_binary_kfold------------")
-    knn4con_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
-                          n_splits=n_split)
-
-    print("---------knn_multi_kfold------------")
-    knn4con_multi_kfolds(data_scaled=data_scaled, labels=labels,
-                         n_splits=n_split)
-
-    print("----------svm_binary_kfold------------")
-    svm4con_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
-                          n_splits=n_split, kernel=kernel)
-
-    print("-----------svm_multi_kfold------------")
-    svm4con_multi_kfolds(data_scaled=data_scaled, labels=labels,
-                         n_splits=n_split, kernel=kernel)
-
-    # 数据增强后的数据和标签跑模型
-    print("")
-    print("Binary augmented data to 50% P/N ratio")
-
-    print("---------knn_binary_kfold------------")
-    knn4con_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-                          n_splits=n_split)
-
-    print("----------svm_binary_kfold------------")
-    svm4con_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-                          n_splits=n_split, kernel=kernel)
-
-
-    # ################################ 随时间推移重新检验部分
-    # # 日后新采的数据属性
-    # default_latter_auth_per_person = 4  # 每人采集次数
-    # latter_positive_label = positive_label  # 正样本, 与之前是一致的
-
-    # latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
-    #     default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
-    #     positive_label=latter_positive_label, model=model,
-    #     studytype_users_dates_range=read_data_latter_data_json()[1],
-    #     size_list=[3], pin_list=[14], noise_level=noise_level)
-
-    # print("")
-    # print(f"latter_data_scaled: {latter_data_scaled.shape}")
-    # print("")
-
-    # print("--------knn_binary------------")
-    # knn4con_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-    #                latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
-
-    # print("---------knn_multi------------")
-    # knn4con_multi(data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled,
-    #               latter_labels=latter_labels)
-
-    # print("---------svm_binary------------")
-    # svm4con_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-    #                latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
-
-    # print("---------svm_multi------------")
-    # svm4con_multi(data_scaled=data_scaled, labels=labels,
-    #               latter_data_scaled=latter_data_scaled, latter_labels=latter_labels
-    #               )
-
-
-if __name__ == "__main__":
-    with open('output.txt', 'w') as file:  # 将print内容保存到文件
-        # 保存当前的标准输出
-        original_stdout = sys.stdout
-        # 将标准输出重定向到文件
-        sys.stdout = file
-        main()
-        # 恢复原来的标准输出
-        sys.stdout = original_stdout
-
-    # main() # 用于在终端输出print内容
+    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+          "\nf1s:", average_f1s)
