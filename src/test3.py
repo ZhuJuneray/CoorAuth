@@ -82,3 +82,55 @@ class HeadAngleDrawer:
         # Draw and save all statistical charts
         for stat_name in self.stats:
             self.draw_charts(self.stats[stat_name], stat_name, f"{stat_name}_head_angles")
+
+from sklearn.feature_selection import SelectKBest, f_classif
+
+# X = np.array([[1,1,1,1,0,2,3],
+#               [1,1,1,1,0,2,3],
+#               [1,1,1,1,0,2,3],
+#               [1,1,1,1,0,2,3],
+#               [1,1,1,1,0,2,3],
+#               [1,1,1,1,3,2,3],
+#               [1,1,1,1,3,2,3],
+#               [1,1,1,1,3,2,3],
+#               [1,1,1,1,3,2,3],
+#               [1,1,1,1,3,2,3]])
+
+# y = np.array([0,0,0,0,0,1,1,1,1,1])
+
+# selector = SelectKBest(score_func=f_classif, k='all')  # k='all'意味着选择所有特征
+# selector.fit(X, y)
+
+# # 获取各特征的Fisher得分
+# scores = selector.scores_
+
+# # 打印特征得分
+# print("Feature scores:", scores)
+
+
+# from sklearn.svm import SVC
+# from sklearn.feature_selection import RFE
+
+# # Initialize SVM classifier
+# svc = SVC(kernel="linear")
+
+# # Select number of features you want to retain. For example, let's keep 10 features
+# num_features_to_select = 10
+
+# # Initialize RFE with the linear SVM classifier
+# rfe = RFE(estimator=svc, n_features_to_select=num_features_to_select)
+
+# # Fit RFE
+# rfe = rfe.fit(X, y)
+
+# # Print the ranking of features
+# ranking = rfe.ranking_
+# print('Feature Ranking: %s' % ranking)
+# important_feature_indices = np.where(ranking == 1)[0]
+# print("Indices of the most important features:", important_feature_indices)
+
+
+a = [1,4,6,2,3,9,np.nan,23,7,4]
+if np.isinf(a).any():
+    print(f"inf indices:{np.where(np.isinf(a))}")
+print(np.argsort(a))

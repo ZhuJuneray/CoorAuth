@@ -16,7 +16,7 @@ def smooth_data(arr, window_parameter=9, polyorder_parameter=2):
     return arr_smoothed
 
 
-def read_data_name_from_json(filepath="D:\pycharm\srt_vr_auth\src\data.json"):
+def read_data_name_from_json(filepath=(os.getcwd()+"/src/data.json")):
     with open(filepath, 'r', encoding='utf-8') as file:
         data = json.load(file)
     data_list = [f"{item['studytype']}_{item['names']}_{item['date']}_{item['num_range']}" for item in data['data']]
@@ -144,12 +144,12 @@ def data_scaled_and_label(studytype_users_dates_range, rotdir=None, model="", si
             loop_num += 1
 
         # 生成高斯噪声并添加到选定的正类样本
-        noise_scale = noise_level * positive_features_to_augment.std()  # 调整噪声水平
-        gaussian_noise = np.random.normal(0, noise_scale, positive_features_to_augment.shape)
-        positive_features_noisy = positive_features_to_augment + gaussian_noise
+        # noise_scale = noise_level * positive_features_to_augment.std()  # 调整噪声水平
+        # gaussian_noise = np.random.normal(0, noise_scale, positive_features_to_augment.shape)
+        # positive_features_noisy = positive_features_to_augment + gaussian_noise
 
         # 将增强的样本合并回原始数据集
-        result_array_augmented = np.concatenate((result_array, positive_features_noisy), axis=0)
+        result_array_augmented = np.concatenate((result_array, positive_features_to_augment), axis=0)
         # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
         binary_labels_augmented = np.concatenate((binary_labels, [1 for _ in range(positive_samples_needed)]), axis=0)
 
@@ -616,7 +616,7 @@ def svm4con_multi_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scal
 
 ################################################################ main
 def main():
-    os.chdir('D:\pycharm\srt_vr_auth') # cwd的绝对路径
+    # os.chdir('D:\pycharm\srt_vr_auth') # cwd的绝对路径
     positive_label = ['7']  # 正样本
     model = 'head'  # model
     n_split = 3  # k fold

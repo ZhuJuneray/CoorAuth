@@ -48,7 +48,8 @@ def replace_local_outliers(arr, window_size=5, threshold=1.5): #去除离群值
 
 # 1231 update 考虑smooth_data的细节：是否需要平滑？是否需要去除离群值？
 def smooth_data(arr, window_parameter=9, polyorder_parameter=2): # 平滑数据
-    arr = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
+    # arr = savgol_filter(arr, window_length=window_parameter, polyorder=polyorder_parameter)
+    arr = replace_local_outliers(arr)
     return arr
 
 
@@ -96,6 +97,7 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
         range_fixation = range_fixation[:fixation_num]
     # print(ranges, "range_sacaades", range_sacaades, "range_fix", range_fixation)
     ranges = range_fixation + range_sacaades # 也即5个fixation和5个saccades
+    
     # print("changed ranges", ranges)
     # update 1.1 改成了函数，获得序列本身的特征向量
     seq_initial = get_n_derivation_features(sequence, ranges)
@@ -165,12 +167,10 @@ def get_n_derivation_features(sequence, ranges):
         features_wamp.append(wamp) # zero
         features_ssc.append(ssc) # low
 
-    # return np.concatenate([features_mean, features_max, features_min, features_var,
-    #                        features_median, features_rms, features_std, features_mad,
-    #                         features_iqr, features_mc, features_wamp, features_ssc])
     return np.concatenate([features_mean, features_max, features_min, features_var,
                            features_median, features_rms, features_std, features_mad,
                             features_iqr, features_mc, features_wamp, features_ssc])
+    # return np.concatenate([features_mean])
 
 
 def difference_gaze_lr_euler_angle(user, date, num): # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
@@ -453,7 +453,8 @@ def feature_process_quaternion(segment_data_dir=None, eye_data_dir=None, head_da
     ranges = None
     if segment_data_dir is not None:
         if not os.path.exists(segment_data_dir):
-            warnings.warn(f"The file {segment_data_dir} does not exist.", Warning)
+            pass
+            # warnings.warn(f"The file {segment_data_dir} does not exist.", Warning)
         else:
             with open(segment_data_dir, 'r') as file:
                 text_data = file.read().strip()
