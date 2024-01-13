@@ -9,7 +9,7 @@ from data_preprocess import data_augment_and_label, read_data_latter_data_json
 
 
 ################################################################ mlp binary
-def mlp_binary(hidden_layer_sizes=(100,), activation='relu', alpha=0.0001, max_iter=200,
+def mlp_binary(hidden_layer_sizes=(256, ), activation='relu', alpha=0.0001, max_iter=200,
               data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None):
     # 划分数据集
     X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
@@ -63,7 +63,7 @@ def mlp_binary(hidden_layer_sizes=(100,), activation='relu', alpha=0.0001, max_i
 
 
 ################################################################ mlp multi
-def mlp_multi(hidden_layer_sizes=(100,), activation='relu', alpha=0.0001, max_iter=200,
+def mlp_multi(hidden_layer_sizes=(256, ), activation='relu', alpha=0.0001, max_iter=200,
               data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
     # 划分数据集
     X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
@@ -103,7 +103,7 @@ def mlp_multi(hidden_layer_sizes=(100,), activation='relu', alpha=0.0001, max_it
 
 
 ################################################################ mlp binary kfold
-def mlp_binary_kfolds(hidden_layer_sizes=(100,), activation='relu', solver='adam',
+def mlp_binary_kfolds(hidden_layer_sizes=(256, ), activation='relu', solver='adam',
                       alpha=0.0001, max_iter=200, n_splits=5, data_scaled=None, binary_labels=None):
     # 设置交叉验证的折叠数
     kf = StratifiedKFold(n_splits=n_splits, shuffle=True)
@@ -163,7 +163,7 @@ def mlp_binary_kfolds(hidden_layer_sizes=(100,), activation='relu', solver='adam
 
 
 ################################################################ mlp multi kfold
-def mlp_multi_kfolds(hidden_layer_sizes=(100,), activation='relu', solver='adam', alpha=0.0001, max_iter=200,
+def mlp_multi_kfolds(hidden_layer_sizes=(256, ), activation='relu', solver='adam', alpha=0.0001, max_iter=200,
                      n_splits=5, data_scaled=None, labels=None):
     # 生成示例数据
     for label in np.unique(labels):

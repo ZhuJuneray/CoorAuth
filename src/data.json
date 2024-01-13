@@ -1,16 +1,15 @@
 {
     "data": [
-
         {
             "studytype": "study2",
             "names": 7,
-            "date": "1230",
-            "num_range": "1-4"
+            "date": "12",
+            "num_range": "1-5"
         },
         {
             "studytype": "study2",
             "names": 7,
-            "date": "1229",
+            "date": "1230",
             "num_range": "1-4"
         },
         {
@@ -84,20 +83,38 @@
             "names": 14,
             "date": "1231",
             "num_range": "1-4"
+        },
+        {
+            "studytype": "study2",
+            "names": 14,
+            "date": "12",
+            "num_range": "1-5"
         }
     ],
     "latter_auth": [
         {
             "studytype": "study2",
             "names": 7,
-            "date": "1231",
-            "num_range": "1-4"
+            "date": "12",
+            "num_range": "6-7"
         },
         {
             "studytype": "study2",
             "names": 14,
             "date": "12",
-            "num_range": "3-7"
+            "num_range": "6-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 7,
+            "date": "0113",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study2",
+            "names": 14,
+            "date": "0113",
+            "num_range": "1-4"
         },
         {
             "studytype": "study2",

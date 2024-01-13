@@ -177,7 +177,7 @@ def get_n_derivation_features(sequence, ranges):
         features_wamp.append(wamp)  # zero
         features_ssc.append(ssc)  # low
 
-    return np.concatenate([features_max
+    return np.concatenate([features_mean, features_max, features_min, features_var, features_median
                            ])
 
 
@@ -361,7 +361,7 @@ def head_eye_slice_quaternion_read(head_data_dir=None, eye_data_dir=None, segmen
             # Parse the ranges from the text data
             ranges = [list(map(int, r.split('-'))) for r in text_data.split(';') if r]
 
-    return data_head, data_eye, ranges
+    return data_head, data_eye, None
 
 
 # 1231update segment_data_dir为切断的文件路径
