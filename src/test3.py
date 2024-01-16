@@ -129,13 +129,6 @@ from sklearn.feature_selection import SelectKBest, f_classif
 # important_feature_indices = np.where(ranking == 1)[0]
 # print("Indices of the most important features:", important_feature_indices)
 
-
-a = [[1,4,6,2,3,9,23,7,4],[2,4,7,3,5,8,9,3,2],[3,5,7,2,4,6,8,3,2]]
-b = [[2,4,7,3,5,8,9,3,2],[3,5,7,2,4,6,8,3,2],[1,4,6,2,3,9,23,7,4]]
-c = np.concatenate((a,b), axis=0)
-print(c)
-d = np.vstack((a,b))
-print(d)
 # if np.isinf(a).any():
 #     print(f"inf indices:{np.where(np.isinf(a))}")
 # print(np.argsort(a))
