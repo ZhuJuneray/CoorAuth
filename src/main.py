@@ -12,7 +12,7 @@ def main():
     model = 'head'  # model
     n_split = 3  # k fold
     noise_level = 0.3  # noise level
-    augmentation_time = 2  # 高斯噪声做数据增强的倍数
+    augmentation_time = 5  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
     pin_list = [13, 14]  # pin list
 
