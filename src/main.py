@@ -8,13 +8,13 @@ from data_preprocess import data_augment_and_label, read_data_latter_data_json
 ################################################################ main
 def main():
     os.chdir('D:\pycharm\srt_vr_auth')  # cwd的绝对路径
-    positive_label = ['14']  # 正样本
+    positive_label = ['7']  # 正样本
     model = 'head'  # model
     n_split = 3  # k fold
     noise_level = 0.3  # noise level
     augmentation_time = 5  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
-    pin_list = [13, 14]  # pin list
+    pin_list = [14, 15]  # pin list
 
     # 1.3update parameters for models
     svm_kernel = 'linear'

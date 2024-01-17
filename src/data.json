@@ -112,9 +112,21 @@
         },
         {
             "studytype": "study2",
+            "names": 7,
+            "date": "0117",
+            "num_range": "1-3"
+        },
+        {
+            "studytype": "study2",
             "names": 14,
             "date": "0113",
             "num_range": "1-4"
+        },
+        {
+            "studytype": "study2",
+            "names": 7,
+            "date": "0117",
+            "num_range": "4-7"
         },
         {
             "studytype": "study2",
@@ -124,19 +136,13 @@
         },
         {
             "studytype": "study2",
+            "names": 7,
+            "date": "0117",
+            "num_range": "8-11"
+        },
+        {
+            "studytype": "study2",
             "names": 9,
-            "date": "1229",
-            "num_range": "8-10"
-        },
-        {
-            "studytype": "study2",
-            "names": 10,
-            "date": "1229",
-            "num_range": "8-10"
-        },
-        {
-            "studytype": "study2",
-            "names": 11,
             "date": "1229",
             "num_range": "8-10"
         }
