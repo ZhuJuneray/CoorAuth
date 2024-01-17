@@ -8,13 +8,19 @@ from data_preprocess import data_augment_and_label, read_data_latter_data_json
 ################################################################ main
 def main():
     os.chdir('D:\pycharm\srt_vr_auth')  # cwd的绝对路径
-    positive_label = ['7']  # 正样本
+    positive_label = ['14']  # 正样本
     model = 'head'  # model
     n_split = 3  # k fold
     noise_level = 0.3  # noise level
     augmentation_time = 2  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
-    pin_list = [14]  # pin list
+    pin_list = [13, 14]  # pin list
+
+    # 1.3update parameters for models
+    svm_kernel = 'linear'
+    knn_neighbors = 3
+    mlp_hiddenlayer = (256,)
+    mlp_iteration = 200
 
     # 1.1update augment_time表示增强为原来数量的多少倍，如果留空则为默认值1，即全部为原始数据
     data_scaled, labels, binary_labels, scaled_data_augmented, binary_labels_augmented = data_augment_and_label(
@@ -58,7 +64,7 @@ def main():
     # 数据增强后的数据和标签跑模型
     print("")
     print("data augment for binary")
-    #
+
     # print("---------knn_binary_kfold------------")
     # knn_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
     #                   n_splits=n_split)
@@ -85,7 +91,7 @@ def main():
     print("")
     print(f"latter_data_scaled: {latter_data_scaled.shape}")
     print("")
-    #
+
     # print("--------knn_binary------------")
     # knn_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
     #            latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
