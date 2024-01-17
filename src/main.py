@@ -13,9 +13,9 @@ def main():
     model = 'head'  # model
     n_split = 3  # k fold
     noise_level = 0.3  # noise level
-    augmentation_time = 4  # 高斯噪声做数据增强的倍数
+    augmentation_time = 8  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
-    pin_list = [1, 2]  # pin list
+    pin_list = [1, 2, 3]  # pin list
 
     # 1.3update parameters for models
     svm_kernel = 'linear'
@@ -82,6 +82,7 @@ def main():
     # 日后新采的数据属性
     default_latter_auth_per_person = 4  # 每人采集次数
     latter_positive_label = positive_label  # 正样本, 与之前是一致的
+    pin_list = [1, 2]
 
     latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
         default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),

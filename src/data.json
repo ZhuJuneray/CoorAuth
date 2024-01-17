@@ -35,21 +35,39 @@
             "names": 6,
             "date": "0117",
             "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 7,
+            "date": "0117",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 8,
+            "date": "0117",
+            "num_range": "1-7"
         }
     ],
     "latter_auth": [
 
         {
-            "studytype": "study2",
-            "names": 4,
-            "date": "0117",
-            "num_range": "8-10"
-        },
-        {
-            "studytype": "study2",
+            "studytype": "study3",
             "names": 5,
             "date": "0117",
-            "num_range": "8-10"
+            "num_range": "1-10"
+        },
+        {
+            "studytype": "study3",
+            "names": 6,
+            "date": "0117",
+            "num_range": "1-10"
+        },
+        {
+            "studytype": "study3",
+            "names": 8,
+            "date": "0117",
+            "num_range": "1-10"
         }
 
     ]

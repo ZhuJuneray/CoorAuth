@@ -211,9 +211,9 @@ def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir=""
     date = member.split('_')[2]
 
     data1 = pd.read_csv(os.path.join(rotdir,
-                                     f"VRAuth{studytype[-1]}Angle/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
+                                     f"VRAuth2Angle/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
     data2 = pd.read_csv(os.path.join(rotdir,
-                                     f"VRAuth{studytype[-1]}Angle/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
+                                     f"VRAuth2Angle/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
 
     # 将读取的数据转换为DataFrame
     df1 = pd.DataFrame(data1)
@@ -364,7 +364,7 @@ def head_eye_slice_quaternion_read(head_data_dir=None, eye_data_dir=None, segmen
             # Parse the ranges from the text data
             ranges = [list(map(int, r.split('-'))) for r in text_data.split(';') if r]
 
-    return data_head, data_eye, None
+    return data_head, data_eye, ranges
 
 
 # 1231update segment_data_dir为切断的文件路径
@@ -665,9 +665,9 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
             for pin in pin_list:
                 for num in range(range_start, range_end + 1):
                     # 文件读取
-                    head_path = rotdir + f"VRAuth{studytype[-1]}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
-                    eye_path = rotdir + f"VRAuth{studytype[-1]}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
-                    segment_path = rotdir + f"VRAuth{studytype[-1]}/P{user}/Saccades_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.txt"
+                    head_path = rotdir + f"VRAuth2/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
+                    eye_path = rotdir + f"VRAuth2/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
+                    segment_path = rotdir + f"VRAuth2/P{user}/Saccades_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.txt"
                     data_head, data_eye, ranges = head_eye_slice_quaternion_read(head_data_dir=head_path,
                                                                                  eye_data_dir=eye_path,
                                                                                  segment_data_dir=segment_path)
@@ -718,9 +718,10 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
             num_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][5]
 
             member_to_copy = f"{studytype_to_copy}_{user_to_copy}_{date_to_copy}"  # 用于merged_array_generator的member参数
-            head_path = rotdir + f"VRAuth{studytype_to_copy[-1]}/P{user_to_copy}/Head_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
-            eye_path = rotdir + f"VRAuth{studytype_to_copy[-1]}/P{user_to_copy}/GazeCalculate_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
-            segment_path = rotdir + f"VRAuth{studytype_to_copy[-1]}/P{user_to_copy}/Saccades_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.txt"
+            # {studytype_to_copy[-1]}是为了根据studyn取VRAuth后面的数字
+            head_path = rotdir + f"VRAuth2/P{user_to_copy}/Head_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
+            eye_path = rotdir + f"VRAuth2/P{user_to_copy}/GazeCalculate_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
+            segment_path = rotdir + f"VRAuth2/P{user_to_copy}/Saccades_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.txt"
             data_head, data_eye, ranges = head_eye_slice_quaternion_read(head_data_dir=head_path,
                                                                          eye_data_dir=eye_path,
                                                                          segment_data_dir=segment_path)
