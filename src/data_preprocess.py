@@ -114,7 +114,7 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     # 1阶导
     seq_second = get_n_derivation_features(np.diff(sequence), ranges)
 
-    seq_all = np.concatenate([seq_initial, seq_second])
+    seq_all = np.concatenate([seq_initial])
     return seq_all
 
 
@@ -177,8 +177,9 @@ def get_n_derivation_features(sequence, ranges):
         features_wamp.append(wamp)  # zero
         features_ssc.append(ssc)  # low
 
-    return np.concatenate([features_mean, features_max, features_min, features_var, features_median
-                           ])
+    return np.concatenate([features_mean, features_max, features_min, features_var, features_median, features_rms, 
+                            features_std, features_mad, features_kurtosis, features_skewness, features_iqr,
+                            features_mc, features_wamp, features_ssc])
 
 
 def difference_gaze_lr_euler_angle(user, date, num):  # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
@@ -210,9 +211,9 @@ def difference_gaze_head(member, size, pin, num, eye='L', angle='Yaw', rotdir=""
     date = member.split('_')[2]
 
     data1 = pd.read_csv(os.path.join(rotdir,
-                                     f"VRAuthStudy1Angle-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
+                                     f"VRAuth{studytype[-1]}Angle/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
     data2 = pd.read_csv(os.path.join(rotdir,
-                                     f"VRAuthStudy1Angle-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
+                                     f"VRAuth{studytype[-1]}Angle/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"))
 
     # 将读取的数据转换为DataFrame
     df1 = pd.DataFrame(data1)
@@ -286,12 +287,13 @@ def range_to_int_value(range_str):
     return range_to_int_start_end(range_str, 'end') - range_to_int_start_end(range_str, 'start')
 
 
-def google_sheet_to_json(studytype="study1", credential_path="src/credentials.json", google_sheet_name="被试招募",
-                         json_save_path="src/data.json"):
+def google_sheet_to_json(studytypes=['study1'], worksheet_name='simulation', credential_path="src/credentials.json", google_sheet_name="VRAuth被试招募",
+                         json_save_path="src/data.json"): # *args is the tuple storing studytype
+    
     import gspread
-    def map_names_to_numbers(names):
-        name_to_number = {}
-        number_list = []
+    def map_names_to_numbers(names): # 将人名按照首次出现的顺序映射成自然数列表
+        name_to_number = {} # 首次出现的人名映射成1，第二次出现的人名映射成2，再次出现的人名不进入次dict
+        number_list = [] # 用于存储映射后的自然数列表
         counter = 1
         for name in names:
             if name not in name_to_number:
@@ -302,19 +304,20 @@ def google_sheet_to_json(studytype="study1", credential_path="src/credentials.js
 
     client = gspread.service_account(filename=credential_path)
     spreadsheet = client.open(google_sheet_name)
-    sheet = spreadsheet.sheet1
+    sheet = spreadsheet.worksheet(worksheet_name) # worksheet是google sheet中的一个sheet
     # Fetch the first column values
     first_column = sheet.col_values(1)
+    name_column = sheet.col_values(4)
     # for participant in range(count_study):
-    first_occurrence = None
-    last_occurrence = None
+    first_occurrence = 2
+    last_occurrence = len(name_column)
 
-    for i, value in enumerate(first_column, start=1):  # start=1 to start counting from row 1
-        if value == studytype:
-            last_occurrence = i
-            if first_occurrence is None:
-                first_occurrence = i
-
+    # for i, value in enumerate(first_column, start=1):  # start=1 to start counting from row 1
+    #     if is_string_in_tuple(value, studytypes):
+    #         last_occurrence = i
+    #         if first_occurrence is None:
+    #             first_occurrence = i
+    matching_rows = [i + 1 for i, cell_value in enumerate(first_column) if cell_value in studytypes]
     data_range = f"D{first_occurrence}:D{last_occurrence}"
     column_data = sheet.range(data_range)
     names = [cell.value for cell in column_data if cell.value.strip()]
@@ -322,12 +325,12 @@ def google_sheet_to_json(studytype="study1", credential_path="src/credentials.js
 
     data_list = []
 
-    for i in range(last_occurrence - first_occurrence + 1):  # Adjust the range as needed
+    for row in matching_rows:  # Adjust the range as needed
         # Generate or collect your data
         data_item = {
-            "studytype": studytype,
-            "names": numbered_list[i],  # Indexing numbered_list correctly
-            "date": sheet.col_values(2)[i + first_occurrence - 1],
+            "studytype": sheet.col_values(1)[row - 1],
+            "names": numbered_list[row - 2],  # Indexing numbered_list correctly
+            "date": sheet.col_values(2)[row - 1],
             "num_range": ""  # Added num_range attribute with empty value
         }
         # Append the data item to the list
@@ -660,9 +663,9 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
             for pin in pin_list:
                 for num in range(range_start, range_end + 1):
                     # 文件读取
-                    head_path = rotdir + f"VRAuthStudy1-{date}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
-                    eye_path = rotdir + f"VRAuthStudy1-{date}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
-                    segment_path = rotdir + f"VRAuthStudy1-{date}/P{user}/Saccades_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.txt"
+                    head_path = rotdir + f"VRAuth{studytype[-1]}/P{user}/Head_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
+                    eye_path = rotdir + f"VRAuth{studytype[-1]}/P{user}/GazeCalculate_data_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.csv"
+                    segment_path = rotdir + f"VRAuth{studytype[-1]}/P{user}/Saccades_{studytype}-{user}-{date}-{str(size)}-{str(pin)}-{str(num)}.txt"
                     data_head, data_eye, ranges = head_eye_slice_quaternion_read(head_data_dir=head_path,
                                                                                  eye_data_dir=eye_path,
                                                                                  segment_data_dir=segment_path)
@@ -706,9 +709,9 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
             num_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][5]
 
             member_to_copy = f"{studytype_to_copy}_{user_to_copy}_{date_to_copy}"  # 用于merged_array_generator的member参数
-            head_path = rotdir + f"VRAuthStudy1-{date_to_copy}/P{user_to_copy}/Head_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
-            eye_path = rotdir + f"VRAuthStudy1-{date_to_copy}/P{user_to_copy}/GazeCalculate_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
-            segment_path = rotdir + f"VRAuthStudy1-{date_to_copy}/P{user_to_copy}/Saccades_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.txt"
+            head_path = rotdir + f"VRAuth{studytype_to_copy[-1]}/P{user_to_copy}/Head_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
+            eye_path = rotdir + f"VRAuth{studytype_to_copy[-1]}/P{user_to_copy}/GazeCalculate_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
+            segment_path = rotdir + f"VRAuth{studytype_to_copy[-1]}/P{user_to_copy}/Saccades_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.txt"
             data_head, data_eye, ranges = head_eye_slice_quaternion_read(head_data_dir=head_path,
                                                                          eye_data_dir=eye_path,
                                                                          segment_data_dir=segment_path)
@@ -727,6 +730,9 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
 
         # 将增强的样本合并回原始数据集
         result_array_augmented = np.concatenate((result_array, positive_features_to_augment), axis=0)
+        print(f"result_array.shape: {result_array.shape}")
+        print(f"positive_features_to_augment.shape: {positive_features_to_augment.shape}")
+        print(f"result_array_augmented.shape: {result_array_augmented.shape}")
         # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
         binary_labels_augmented = np.concatenate((binary_labels, [1 for _ in range(positive_samples_needed)]), axis=0)
         scaled_data_augmented = result_array_augmented

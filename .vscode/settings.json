@@ -1,4 +1,5 @@
 {
     "dotnet.preferCSharpExtension": true,
-    "python.REPL.enableREPLSmartSend": false
+    "python.REPL.enableREPLSmartSend": false,
+    "git.ignoreLimitWarning": true
 }

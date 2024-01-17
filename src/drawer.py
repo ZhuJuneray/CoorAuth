@@ -1101,5 +1101,5 @@ class Drawer: # 画json里的数据的图
 
 # rotdir是文件夹“VRAuthStudy1-1228”等存放的目录，可以是绝对目录，也可以从cwd向下获得
 # Example of how to use the class with different options
-drawer = Drawer(filepath="src/data.json", size_list=[3], pin_list=range(13,19), rotdir = os.path.join(os.getcwd(), 'data'), default_authentications_per_person=4)
+drawer = Drawer(filepath="src/data.json", size_list=[3], pin_list=range(13,19), rotdir = os.path.join(os.getcwd(), 'data'), default_authentications_per_person=7) # todo: 从json里读取num_range
 drawer.run(options=["head_and_eye_quaternion_drawer"])

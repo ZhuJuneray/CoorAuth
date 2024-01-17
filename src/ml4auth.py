@@ -277,8 +277,9 @@ def knn_binary_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, binary_labels
     average_f1s = np.mean(f1s)
     average_fars = np.mean(fars)
     average_frrs = np.mean(frrs)
-    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-          "\nf1s:", average_f1s, "\nfars:", average_fars, "\nfrrs:", average_frrs)
+    # print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+    #       "\nf1s:", average_f1s, "\nfars:", average_fars, "\nfrrs:", average_frrs)
+    print(average_f1s)
 
 
 ################################################################ knn kfold 多分类
@@ -322,8 +323,9 @@ def knn_multi_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, labels=None):
     average_recalls = np.mean(recalls)
     average_f1s = np.mean(f1s)
 
-    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-          "\nf1s:", average_f1s)
+    # print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+    #       "\nf1s:", average_f1s)
+    print(average_f1s)
 
 
 ################################################################ svm kfold 二分类
@@ -393,8 +395,9 @@ def svm_binary_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scaled=
     average_f1s = np.mean(f1s)
     average_fars = np.mean(fars)
     average_frrs = np.mean(frrs)
-    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-          "\nf1s:", average_f1s, "\nfars:", average_fars, "\nfrrs:", average_frrs)
+    # print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+    #       "\nf1s:", average_f1s, "\nfars:", average_fars, "\nfrrs:", average_frrs)
+    print(average_f1s)
 
 
 ################################################################ svm kfold 多分类

@@ -207,18 +207,22 @@ def main():
     scores = selector.scores_
 
     scores_averaged = []
-    sum = 0
+    _sum = 0
     count = 0
 
     segment_len = 10 # 切段数量
 
     for score in scores:
-        sum += score
+        _sum += score
         count += 1
         if count == segment_len:
-            score_averaged = sum / segment_len
-            scores_averaged.append(score_averaged)
-            sum = 0
+            score_single = score
+            scores_averaged.append(score_single)
+
+
+            # score_averaged = _sum / segment_len
+            # scores_averaged.append(score_averaged)
+            _sum = 0
             count = 0
 
     # 打印特征得分
