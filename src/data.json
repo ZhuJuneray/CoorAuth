@@ -37,5 +37,20 @@
             "num_range": "1-7"
         }
     ],
-    "latter_auth": []
+    "latter_auth": [
+
+        {
+            "studytype": "study2",
+            "names": 4,
+            "date": "0117",
+            "num_range": "8-10"
+        },
+        {
+            "studytype": "study2",
+            "names": 5,
+            "date": "0117",
+            "num_range": "8-10"
+        }
+
+    ]
 }

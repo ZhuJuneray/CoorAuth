@@ -622,10 +622,10 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
              dy_el_feat, dp_el_feat, dr_el_feat])
 
     # print(d1)
-    if np.isnan(d1_feat).any():
-        print("NaN values found in d1_feat")
-        # 定位NaN值
-        print(np.argwhere(np.isnan(d1_feat)))
+    # if np.isnan(d1_feat).any():
+    #     print("NaN values found in d1_feat")
+    #     # 定位NaN值
+    #     print(np.argwhere(np.isnan(d1_feat)))
 
     return merged_array
 
@@ -637,6 +637,8 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
 
     studytype_user_date_size_pin_num_pair = []  # studytype, user, date, size, pin, num 的所有排列组合，用于数据增强时循环增强所有正标签里的数据
     result_array = np.array([])
+    print(f"function data_augment_and_label start")
+    print(f"studytype_users_dates_range: {studytype_users_dates_range}")
     studytype = studytype_users_dates_range[0].split('_')[0]  # studytype只有一种
     labels = []
     binary_labels = []
@@ -654,9 +656,9 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                                                                         pin_list, range(range_start, range_end + 1))])
 
         # 标签的生成，按照人名的唯一性
-        labels.extend(np.repeat(user, len(size_list) * len(pin_list) * (range_end - range_start + 1) * augment_time))
-        binary_labels.extend([1 if user in positive_label else 0 for _ in
-                              range(len(size_list) * len(pin_list) * (range_end - range_start + 1) * augment_time)])
+        # labels.extend(np.repeat(user, len(size_list) * len(pin_list) * (range_end - range_start + 1) * augment_time))
+        # binary_labels.extend([1 if user in positive_label else 0 for _ in
+        #                       range(len(size_list) * len(pin_list) * (range_end - range_start + 1) * augment_time)])
 
         # 特征拼接，数据增强
         for size in size_list:
@@ -671,14 +673,20 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                                                                                  segment_data_dir=segment_path)
                     # 1.1 update 数据增强
                     for i in range(1, augment_time + 1):
-                        noise_flag = False if i == 1 else True  # 增强倍数大于1则选择增强
+                        noise_flag = False if i == 1 else True  # 增强倍数大于1则选择增强，首次循环（i=1）为False
 
                         # 对于该增强噪声的水平 返回该member, size, pin, num的特征, 返回一维X向量
-                        merged_array = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
-                                                              member=member, rotdir=rotdir, model=model, size=size, pin=pin,
-                                                              num=num, noise_flag=noise_flag, noise_level=noise_level)
-                        # 将所有特征堆叠起来，每一行是一个特征
-                        result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array
+                        try: # 跳过saccade文件里只有一段fixation的情况，
+                            merged_array = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
+                                                                member=member, rotdir=rotdir, model=model, size=size, pin=pin,
+                                                                num=num, noise_flag=noise_flag, noise_level=noise_level)
+                        except IndexError as e:
+                            print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+                        if not np.isnan(merged_array).any():
+                            labels.append(user) # label生成，如果
+                            binary_labels.append(1 if user in positive_label else 0) # 标签的生成，按照人名的唯一性
+                            # 将所有特征堆叠起来，每一行是一个特征
+                            result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array
 
     scaled_data = result_array
 
@@ -696,6 +704,7 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
         loop_num = 0
         index = 0
         positive_features_to_augment = np.array([])
+        binary_labels_to_concatenate = []
         # studytype user date size pin num
 
         while loop_num < positive_samples_needed:
@@ -716,12 +725,17 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                                                                          eye_data_dir=eye_path,
                                                                          segment_data_dir=segment_path)
 
-            merged_array_augmented = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
+            try: # 跳过saccade文件里只有一段fixation的情况，
+                merged_array_augmented = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
                                                             member=member_to_copy, rotdir=rotdir, model=model,
                                                             size=size_to_copy, pin=pin_to_copy, num=num_to_copy,
                                                             noise_flag=True, noise_level=noise_level)
-
-            positive_features_to_augment = np.vstack([positive_features_to_augment,
+            except IndexError as e:
+                            print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+            
+            if not np.isnan(merged_array_augmented).any(): # 如果增强后出现空特征
+                binary_labels_to_concatenate.append(1)
+                positive_features_to_augment = np.vstack([positive_features_to_augment,
                                                       merged_array_augmented]) if positive_features_to_augment.size else merged_array_augmented
 
             index = (index + 1) % len(studytype_user_date_size_pin_num_pair_to_copy)
@@ -734,7 +748,7 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
         print(f"positive_features_to_augment.shape: {positive_features_to_augment.shape}")
         print(f"result_array_augmented.shape: {result_array_augmented.shape}")
         # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
-        binary_labels_augmented = np.concatenate((binary_labels, [1 for _ in range(positive_samples_needed)]), axis=0)
+        binary_labels_augmented = np.concatenate((binary_labels, binary_labels_to_concatenate), axis=0)
         scaled_data_augmented = result_array_augmented
     else:
         # 如果不需要增加正样本，则保持原始数据不变
