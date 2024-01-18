@@ -2,12 +2,6 @@
     "data": [
         {
             "studytype": "study2",
-            "names": 1,
-            "date": "0116",
-            "num_range": "1-7"
-        },
-        {
-            "studytype": "study2",
             "names": 2,
             "date": "0117",
             "num_range": "1-7"
@@ -92,6 +86,7 @@
             "date": "0118",
             "num_range": "1-10"
         },
+
 
         {
             "studytype": "study2",

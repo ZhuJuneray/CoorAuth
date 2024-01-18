@@ -637,8 +637,6 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
 
     studytype_user_date_size_pin_num_pair = []  # studytype, user, date, size, pin, num 的所有排列组合，用于数据增强时循环增强所有正标签里的数据
     result_array = np.array([])
-    print(f"function data_augment_and_label start")
-    print(f"studytype_users_dates_range: {studytype_users_dates_range}")
     studytype = studytype_users_dates_range[0].split('_')[0]  # studytype只有一种
     labels = []
     binary_labels = []
