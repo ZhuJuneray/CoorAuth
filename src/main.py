@@ -7,15 +7,15 @@ from data_preprocess import data_augment_and_label, read_data_latter_data_json
 
 ################################################################ main
 def main():
-    current_working_directory = "/Users/ray/Documents/VR_Authentication"
+    current_working_directory = "D:\pycharm\srt_vr_auth"
     os.chdir(current_working_directory)  # cwd的绝对路径
-    positive_label = ['4']  # 正样本
+    positive_label = ['14']  # 正样本
     model = 'head'  # model
     n_split = 3  # k fold
     noise_level = 0.3  # noise level
-    augmentation_time = 8  # 高斯噪声做数据增强的倍数
+    augmentation_time = 1  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
-    pin_list = [1, 2, 3]  # pin list
+    pin_list = [9]  # pin list
 
     # 1.3update parameters for models
     svm_kernel = 'linear'
@@ -38,21 +38,21 @@ def main():
     print("")
     print("data augment for multiclass")
 
-    # print("---------knn_binary_kfold------------")
-    # knn_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
-    #                   n_splits=n_split)
-    #
-    # print("---------knn_multi_kfold------------")
-    # knn_multi_kfolds(data_scaled=data_scaled, labels=labels,
-    #                  n_splits=n_split)
-    #
-    # print("----------svm_binary_kfold------------")
-    # svm_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
-    #                   n_splits=n_split)
-    #
-    # print("-----------svm_multi_kfold------------")
-    # svm_multi_kfolds(data_scaled=data_scaled, labels=labels,
-    #                  n_splits=n_split)
+    print("---------knn_binary_kfold------------")
+    knn_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
+                      n_splits=n_split)
+
+    print("---------knn_multi_kfold------------")
+    knn_multi_kfolds(data_scaled=data_scaled, labels=labels,
+                     n_splits=n_split)
+
+    print("----------svm_binary_kfold------------")
+    svm_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
+                      n_splits=n_split)
+
+    print("-----------svm_multi_kfold------------")
+    svm_multi_kfolds(data_scaled=data_scaled, labels=labels,
+                     n_splits=n_split)
 
     print("------------mlp_binary_kfold------------")
     mlp_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
@@ -66,13 +66,13 @@ def main():
     print("")
     print("data augment for binary")
 
-    # print("---------knn_binary_kfold------------")
-    # knn_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-    #                   n_splits=n_split)
-    #
-    # print("----------svm_binary_kfold------------")
-    # svm_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-    #                   n_splits=n_split)
+    print("---------knn_binary_kfold------------")
+    knn_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+                      n_splits=n_split)
+
+    print("----------svm_binary_kfold------------")
+    svm_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+                      n_splits=n_split)
 
     print("------------mlp_binary_kfold------------")
     mlp_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
@@ -82,7 +82,6 @@ def main():
     # 日后新采的数据属性
     default_latter_auth_per_person = 4  # 每人采集次数
     latter_positive_label = positive_label  # 正样本, 与之前是一致的
-    pin_list = [1, 2]
 
     latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
         default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
@@ -94,21 +93,21 @@ def main():
     print(f"latter_data_scaled: {latter_data_scaled.shape}")
     print("")
 
-    # print("--------knn_binary------------")
-    # knn_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-    #            latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
-    #
-    # print("---------knn_multi------------")
-    # knn_multi(data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled,
-    #           latter_labels=latter_labels)
-    #
-    # print("---------svm_binary------------")
-    # svm_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-    #            latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
-    #
-    # print("---------svm_multi------------")
-    # svm_multi(data_scaled=data_scaled, labels=labels,
-    #           latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
+    print("--------knn_binary------------")
+    knn_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+               latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
+
+    print("---------knn_multi------------")
+    knn_multi(data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled,
+              latter_labels=latter_labels)
+
+    print("---------svm_binary------------")
+    svm_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+               latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
+
+    print("---------svm_multi------------")
+    svm_multi(data_scaled=data_scaled, labels=labels,
+              latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
 
     print("---------mlp_binary------------")
     mlp_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,

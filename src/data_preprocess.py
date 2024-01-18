@@ -682,6 +682,8 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                                                                 num=num, noise_flag=noise_flag, noise_level=noise_level)
                         except IndexError as e:
                             print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+                        except ValueError as e:
+                            print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
                         if not np.isnan(merged_array).any():
                             labels.append(user) # label生成，如果
                             binary_labels.append(1 if user in positive_label else 0) # 标签的生成，按照人名的唯一性
@@ -732,8 +734,9 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                                                             size=size_to_copy, pin=pin_to_copy, num=num_to_copy,
                                                             noise_flag=True, noise_level=noise_level)
             except IndexError as e:
-                            print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
-            
+                print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+            except ValueError as e:
+                print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
             if not np.isnan(merged_array_augmented).any(): # 如果增强后出现空特征
                 binary_labels_to_concatenate.append(1)
                 positive_features_to_augment = np.vstack([positive_features_to_augment,
