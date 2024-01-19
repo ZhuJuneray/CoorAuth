@@ -9,13 +9,13 @@ from data_preprocess import data_augment_and_label, read_data_latter_data_json
 def main():
     current_working_directory = "D:\pycharm\srt_vr_auth"
     os.chdir(current_working_directory)  # cwd的绝对路径
-    positive_label = ['14']  # 正样本
+    positive_label = ['21']  # 正样本
     model = 'head'  # model
     n_split = 3  # k fold
     noise_level = 0.3  # noise level
-    augmentation_time = 10  # 高斯噪声做数据增强的倍数
+    augmentation_time = 2  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
-    all_pin_list = [1, 3, 5, 7]  # pin list
+    all_pin_list = [1]  # pin list
 
     print(f"positive_label: {positive_label}, model: {model}, augmentation_time: {augmentation_time}")
     print(f"model:{model}, size_list: {size_list}")
@@ -86,42 +86,42 @@ def main():
 
         ################################ 随时间推移重新检验部分
         # 日后新采的数据属性
-        # default_latter_auth_per_person = 4  # 每人采集次数
-        # latter_positive_label = positive_label  # 正样本, 与之前是一致的
-        #
-        # latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
-        #     default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
-        #     positive_label=latter_positive_label, model=model,
-        #     studytype_users_dates_range=read_data_latter_data_json(current_working_directory+'/src/data.json')[1],
-        #     size_list=size_list, pin_list=pin_list, noise_level=noise_level)
-        #
-        # print("")
-        # print(f"latter_data_scaled: {latter_data_scaled.shape}")
-        # print("")
-        #
-        # print("--------knn_binary------------")
-        # knn_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-        #            latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
-        #
+        default_latter_auth_per_person = 4  # 每人采集次数
+        latter_positive_label = positive_label  # 正样本, 与之前是一致的
+
+        latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
+            default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
+            positive_label=latter_positive_label, model=model,
+            studytype_users_dates_range=read_data_latter_data_json(current_working_directory+'/src/data.json')[1],
+            size_list=size_list, pin_list=pin_list, noise_level=noise_level)
+
+        print("")
+        print(f"latter_data_scaled: {latter_data_scaled.shape}")
+        print("")
+
+        print("--------knn_binary------------")
+        knn_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+                   latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
+
         # print("---------knn_multi------------")
         # knn_multi(data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled,
         #           latter_labels=latter_labels)
-        #
-        # print("---------svm_binary------------")
-        # svm_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-        #            latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
-        #
-        # print("---------svm_multi------------")
-        # svm_multi(data_scaled=data_scaled, labels=labels,
-        #           latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
-        #
-        # print("---------mlp_binary------------")
-        # mlp_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-        #         latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
-        #
-        # print("-----------mlp_multi------------")
-        # mlp_multi(data_scaled=data_scaled, labels=labels,
-        #         latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
+
+        print("---------svm_binary------------")
+        svm_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+                   latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
+
+        print("---------svm_multi------------")
+        svm_multi(data_scaled=data_scaled, labels=labels,
+                  latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
+
+        print("---------mlp_binary------------")
+        mlp_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+                latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
+
+        print("-----------mlp_multi------------")
+        mlp_multi(data_scaled=data_scaled, labels=labels,
+                latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
 
 
 if __name__ == "__main__":

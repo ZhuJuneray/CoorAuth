@@ -134,7 +134,7 @@ def svm_binary(kernel="linear", C=1, gamma=0.02,
     latter_data_scaled = scaler.transform(latter_data_scaled)
 
     # 创建svm模型
-    svm_model = SVC(kernel=kernel, C=C, gamma=gamma, )
+    svm_model = SVC(kernel=kernel, C=C, gamma=gamma, probability=True)
     svm_model.fit(X_train, y_train)
     y_pred = svm_model.predict(X_test)
 
@@ -170,7 +170,9 @@ def svm_binary(kernel="linear", C=1, gamma=0.02,
 
     # if not np.isnan(latter_data_scaled):
     latter_y_pred = svm_model.predict(latter_data_scaled)
+    latter_confidence = svm_model.decision_function(latter_data_scaled)
     print(latter_y_pred, latter_labels)
+    print("Confidence", latter_confidence)
 
     latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
     print('随时间推移的准确率', latter_accuracy)
@@ -189,7 +191,7 @@ def svm_multi(kernel="linear", C=1, gamma=0.02,
     latter_data_scaled = scaler.transform(latter_data_scaled)
 
     # 创建svm模型
-    svm_model = SVC(kernel=kernel, C=C, gamma=gamma)
+    svm_model = SVC(kernel=kernel, C=C, gamma=gamma, probability=True)
     svm_model.fit(X_train, y_train)
     y_pred = svm_model.predict(X_test)
 
@@ -210,7 +212,9 @@ def svm_multi(kernel="linear", C=1, gamma=0.02,
     print("F1分数:", f1)
     # if not np.isnan(latter_data_scaled):
     latter_y_pred = svm_model.predict(latter_data_scaled)
+    latter_confidence = svm_model.decision_function(latter_data_scaled)
     print(latter_y_pred, latter_labels)
+    print("Confidence", latter_confidence)
 
     latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
     print('随时间推移的准确率', latter_accuracy)
