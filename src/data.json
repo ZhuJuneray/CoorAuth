@@ -1,81 +1,101 @@
 {
     "data": [
         {
-            "studytype": "study2",
+            "studytype": "study1",
+            "names": 1,
+            "date": "1228",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
             "names": 2,
-            "date": "0117",
-            "num_range": "1-7"
+            "date": "1228",
+            "num_range": ""
         },
         {
-            "studytype": "study2",
+            "studytype": "study1",
             "names": 3,
-            "date": "0117",
-            "num_range": "1-7"
+            "date": "1228",
+            "num_range": ""
         },
         {
-            "studytype": "study2",
+            "studytype": "study1",
+            "names": 4,
+            "date": "1228",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
             "names": 5,
-            "date": "0117",
-            "num_range": "1-7"
+            "date": "1228",
+            "num_range": ""
         },
         {
-            "studytype": "study2",
+            "studytype": "study1",
             "names": 6,
-            "date": "0117",
-            "num_range": "1-7"
+            "date": "1228",
+            "num_range": ""
         },
         {
-            "studytype": "study2",
+            "studytype": "study1",
             "names": 7,
-            "date": "0117",
-            "num_range": "1-7"
+            "date": "1229",
+            "num_range": ""
         },
         {
-            "studytype": "study2",
+            "studytype": "study1",
             "names": 8,
-            "date": "0117",
-            "num_range": "1-7"
+            "date": "1229",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
+            "names": 9,
+            "date": "1229",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
+            "names": 10,
+            "date": "1229",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
+            "names": 11,
+            "date": "1229",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
+            "names": 12,
+            "date": "1229",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
+            "names": 13,
+            "date": "1229",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
+            "names": 14,
+            "date": "0113",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
+            "names": 15,
+            "date": "0116",
+            "num_range": ""
+        },
+        {
+            "studytype": "study1",
+            "names": 16,
+            "date": "0116",
+            "num_range": ""
         }
     ],
-    "latter_auth": [
-
-
-        {
-            "studytype": "study2",
-            "names": 2,
-            "date": "0117",
-            "num_range": "7-14"
-        },
-        {
-            "studytype": "study2",
-            "names": 3,
-            "date": "0117",
-            "num_range": "7-14"
-        },
-        {
-            "studytype": "study2",
-            "names": 5,
-            "date": "0117",
-            "num_range": "7-14"
-        },
-        {
-            "studytype": "study2",
-            "names": 6,
-            "date": "0117",
-            "num_range": "7-14"
-        },
-        {
-            "studytype": "study2",
-            "names": 7,
-            "date": "0117",
-            "num_range": "7-14"
-        },
-        {
-            "studytype": "study2",
-            "names": 8,
-            "date": "0117",
-            "num_range": "7-14"
-        }
-
-    ]
+    "latter_auth": []
 }
