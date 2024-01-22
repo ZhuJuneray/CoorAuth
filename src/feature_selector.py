@@ -17,7 +17,7 @@ def smooth_data(arr, window_parameter=9, polyorder_parameter=2):
     return arr_smoothed
 
 
-def read_data_name_from_json(filepath=(os.getcwd()+"/src/data.json")):
+def read_data_name_from_json(filepath=(os.getcwd()+"/src/data_own_3days.json")):
     with open(filepath, 'r', encoding='utf-8') as file:
         data = json.load(file)
     data_list = [f"{item['studytype']}_{item['names']}_{item['date']}_{item['num_range']}" for item in data['data']]

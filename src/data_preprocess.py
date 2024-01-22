@@ -19,7 +19,7 @@ def read_data_latter_data_json(filepath="D:\pycharm\srt_vr_auth\src\data.json"):
     return data_list, latter_auth_list
 
 
-def read_data_name_from_json(filepath=os.path.join(os.getcwd(), "src/data.json")):
+def read_data_name_from_json(filepath=os.path.join(os.getcwd(), "src/data_own_3days.json")):
     with open(filepath, 'r', encoding='utf-8') as file:
         data = json.load(file)
     data_list = [f"{item['studytype']}-{item['names']}-{item['date']}" for item in data['data']]
@@ -68,7 +68,7 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     # 如果range不空，则按照range中的start和end切分，saccades占slice_num - n段，fixation占n段
     range_fixation = []
     range_sacaades = []
-    fixation_num = 5
+    fixation_num = 3
     saccades_num = slice_num - fixation_num  # 每种切段的数量
     tmp_end = 0
     if ranges is not None:
@@ -114,11 +114,11 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     # 1阶导
     seq_second = get_n_derivation_features(np.diff(sequence), ranges)
 
-    seq_all = np.concatenate([seq_initial])
+    seq_all = np.concatenate([seq_initial, seq_second])
     return seq_all
 
 
-# update1.1 获得n阶导的特征向量
+# update1.1 获得n阶导的统计学特征向量
 def get_n_derivation_features(sequence, ranges):
     # 初始化特征数组
     features = []
@@ -178,8 +178,9 @@ def get_n_derivation_features(sequence, ranges):
         features_ssc.append(ssc)  # low
 
     return np.concatenate([features_mean, features_max, features_min, features_var, features_median, features_rms, 
-                            features_std, features_mad, features_kurtosis, features_skewness, features_iqr,
-                            features_mc, features_wamp, features_ssc])
+                            features_std,
+                           features_mad, features_iqr,
+                            features_mc, features_wamp, features_ssc,  features_kurtosis, features_skewness])
 
 
 def difference_gaze_lr_euler_angle(user, date, num):  # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
@@ -288,7 +289,7 @@ def range_to_int_value(range_str):
 
 
 def google_sheet_to_json(studytypes=['study1'], worksheet_name='simulation', credential_path="src/credentials.json", google_sheet_name="VRAuth被试招募",
-                         json_save_path="src/data.json"): # *args is the tuple storing studytype
+                         json_save_path="src/data_own_3days.json"): # *args is the tuple storing studytype
     
     import gspread
     def map_names_to_numbers(names): # 将人名按照首次出现的顺序映射成自然数列表
@@ -680,6 +681,8 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                                                                 num=num, noise_flag=noise_flag, noise_level=noise_level)
                         except IndexError as e:
                             print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+                        except ValueError as e:
+                            print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
                         if not np.isnan(merged_array).any():
                             labels.append(user) # label生成，如果
                             binary_labels.append(1 if user in positive_label else 0) # 标签的生成，按照人名的唯一性
@@ -730,8 +733,9 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                                                             size=size_to_copy, pin=pin_to_copy, num=num_to_copy,
                                                             noise_flag=True, noise_level=noise_level)
             except IndexError as e:
-                            print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
-            
+                print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+            except ValueError as e:
+                print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
             if not np.isnan(merged_array_augmented).any(): # 如果增强后出现空特征
                 binary_labels_to_concatenate.append(1)
                 positive_features_to_augment = np.vstack([positive_features_to_augment,

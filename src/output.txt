@@ -1,0 +1,4 @@
+positive_label: ['14'], model: head+eye, augmentation_time: 1
+model:head+eye, size_list: [3]
+studytype_users_dates_range: ['study1_2_0117_1-10', 'study1_3_0117_1-10', 'study1_4_0117_1-10', 'study1_5_0117_1-10', 'study1_6_0117_1-10', 'study1_7_0117_1-10', 'study1_8_0117_1-10', 'study1_9_0118_1-10', 'study1_10_0118_1-10', 'study1_11_0118_1-7', 'study1_12_0118_1-10', 'study1_14_0118_1-10', 'study1_15_0118_1-10', 'study1_17_0119_1-10', 'study1_18_0119_1-10', 'study1_19_0119_1-10', 'study1_20_0119_1-10', 'study1_21_0119_1-10', 'study1_22_0119_1-10', 'study1_23_0119_1-10']
+----------------pin_list: [1]----------------

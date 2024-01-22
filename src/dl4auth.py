@@ -126,7 +126,7 @@ def mlp_binary_kfolds(hidden_layer_sizes=(256, ), activation='relu', solver='ada
         X_test = scaler.transform(X_test)
 
         mlp_model = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-                                  solver=solver, alpha=alpha, max_iter=max_iter, random_state=42)
+                                  solver=solver, alpha=alpha, max_iter=max_iter)
         mlp_model.fit(X_train, y_train)
         y_pred = mlp_model.predict(X_test)
 
@@ -189,7 +189,7 @@ def mlp_multi_kfolds(hidden_layer_sizes=(256, ), activation='relu', solver='adam
         X_test = scaler.transform(X_test)
 
         mlp_model = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes, activation=activation,
-                                  solver=solver, alpha=alpha, max_iter=max_iter, random_state=42)
+                                  solver=solver, alpha=alpha, max_iter=max_iter)
         mlp_model.fit(X_train, y_train)
         y_pred = mlp_model.predict(X_test)
 
