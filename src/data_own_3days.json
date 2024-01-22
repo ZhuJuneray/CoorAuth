@@ -169,18 +169,6 @@
             "names": 20,
             "date": "0121",
             "num_range": "1-10"
-        },
-        {
-            "studytype": "study1",
-            "names": 17,
-            "date": "0119",
-            "num_range": "1-10"
-        },
-        {
-            "studytype": "study1",
-            "names": 20,
-            "date": "0119",
-            "num_range": "1-10"
         }
     ]
 }

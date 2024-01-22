@@ -102,11 +102,15 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
 
     # 处理超长的情况，saccades保留最后，fixation保留前面
     if len(range_sacaades) > saccades_num:
-        range_sacaades = range_sacaades[-saccades_num:]
+        range_sacaades = range_sacaades[-saccades_num:] if saccades_num != 0 else [] # 当saccades_num == 0时，[-0:]表示选择整个list，加特判解决 updated 20240122
     if len(range_fixation) > fixation_num:
         range_fixation = range_fixation[:fixation_num]
     # print(ranges, "range_sacaades", range_sacaades, "range_fix", range_fixation)
     ranges = range_fixation + range_sacaades  # 也即5个fixation和5个saccades
+
+    # print(f"range_saccades:{range_sacaades}")
+    # print(f"range_fixation{range_fixation}")
+    # print(f"ranges:{ranges}")
     # print("changed ranges", ranges)
 
     # update 1.1 改成了函数，获得序列本身的特征向量
@@ -114,11 +118,11 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     # 1阶导
     seq_second = get_n_derivation_features(np.diff(sequence), ranges)
 
-    seq_all = np.concatenate([seq_initial])
+    seq_all = np.concatenate([seq_initial, seq_second])
     return seq_all
 
 
-# update1.1 获得n阶导的特征向量
+# update1.1 获得n阶导的统计学特征向量
 def get_n_derivation_features(sequence, ranges):
     # 初始化特征数组
     features = []
@@ -178,9 +182,9 @@ def get_n_derivation_features(sequence, ranges):
         features_ssc.append(ssc)  # low
 
     return np.concatenate([features_mean, features_max, features_min, features_var, features_median, features_rms, 
-                            features_std])
-                           # features_mad, features_kurtosis, features_skewness, features_iqr,
-                           #  features_mc, features_wamp, features_ssc])
+                            features_std,
+                           features_mad, features_iqr,
+                            features_mc, features_wamp, features_ssc,  features_kurtosis, features_skewness])
 
 
 def difference_gaze_lr_euler_angle(user, date, num):  # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始

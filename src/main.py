@@ -7,7 +7,7 @@ from data_preprocess import data_augment_and_label, read_data_latter_data_json
 
 ################################################################ main
 def main():
-    current_working_directory = "D:\pycharm\srt_vr_auth"
+    current_working_directory = "/Users/ray/Documents/VR_Authentication"
     os.chdir(current_working_directory)  # cwd的绝对路径
     positive_label = ['14', '17']  # 正样本
     model = 'head+eye'  # model

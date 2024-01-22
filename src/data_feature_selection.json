@@ -1,0 +1,77 @@
+{
+    "data": [
+        {
+            "studytype": "study2",
+            "names": 1,
+            "date": "0116",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 2,
+            "date": "0117",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 3,
+            "date": "0117",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 4,
+            "date": "0117",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 5,
+            "date": "0117",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 6,
+            "date": "0117",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 7,
+            "date": "0117",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 8,
+            "date": "0117",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 9,
+            "date": "0118",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 10,
+            "date": "0118",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 11,
+            "date": "0118",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 12,
+            "date": "0118",
+            "num_range": "1-7"
+        }
+    ],
+    "latter_auth": []
+}
