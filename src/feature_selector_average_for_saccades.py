@@ -19,7 +19,7 @@ def main():
     size_list = [3]  # list of size
     all_pin_list = [1]  # pin list
     # 0120 update
-    json_name = 'data.json'
+    json_name = 'data_feature_selection.json'
     # json_name = 'data_condition.json'
     print(f"positive_label: {positive_label}, model: {model}, augmentation_time: {augmentation_time}")
     print(f"model:{model}, size_list: {size_list}")
@@ -67,31 +67,28 @@ def main():
 
         segment_len = 10 # 切段数量
 
-        # for score in scores:
-        #     _sum += score
-        #     count += 1
-        #     if count == 1:
-        #         score_single = score
-        #         scores_averaged.append(score_single)
-
-
-        #         # score_averaged = _sum / segment_len
-        #         # scores_averaged.append(score_averaged)
-        #     if count == segment_len:
-        #         _sum = 0
-        #         count = 0
-
-        max_score_in_segment = float('-inf')  # 用于存储每个段内的最大分数
-
+        # 取10段的平均，用scores_averaged表示
         for score in scores:
+            _sum += score
             count += 1
-            if score > max_score_in_segment:
-                max_score_in_segment = score  # 更新段内最大分数
-
+            if count == 1:
+                score_averaged = _sum / segment_len
+                scores_averaged.append(score_averaged)
             if count == segment_len:
-                scores_averaged.append(max_score_in_segment)  # 将段内最大分数添加到列表中
-                max_score_in_segment = float('-inf')  # 重置段内最大分数
+                _sum = 0
                 count = 0
+
+        # 取最大值，也用scores_averaged表示
+        # max_score_in_segment = float('-inf')  # 用于存储每个段内的最大分数
+        # for score in scores:
+        #     count += 1
+        #     if score > max_score_in_segment:
+        #         max_score_in_segment = score  # 更新段内最大分数
+
+        #     if count == segment_len:
+        #         scores_averaged.append(max_score_in_segment)  # 将段内最大分数添加到列表中
+        #         max_score_in_segment = float('-inf')  # 重置段内最大分数
+        #         count = 0
 
             
 
@@ -172,34 +169,34 @@ def main():
         plt.savefig("result/fisher_score/all_fisher_score_by_type.png")
 
 
-        # 相当于把以上all的子图分别保存为一个.png
-        start = 0
-        end = feature_name_num
+        # # 相当于把以上all的子图分别保存为一个.png
+        # start = 0
+        # end = feature_name_num
 
-        for _type in type_name_list:
+        # for _type in type_name_list:
 
-            type_scores_averaged = scores_averaged[start:end]
-            type_top_indices = np.argsort(type_scores_averaged)[::-1]
+        #     type_scores_averaged = scores_averaged[start:end]
+        #     type_top_indices = np.argsort(type_scores_averaged)[::-1]
 
-            type_feature_names = [feature_name_list[i % feature_name_num] for i in type_top_indices if not np.isnan(type_scores_averaged[i])]
-            type_feature_scores = [type_scores_averaged[i] for i in type_top_indices if not np.isnan(type_scores_averaged[i])]
+        #     type_feature_names = [feature_name_list[i % feature_name_num] for i in type_top_indices if not np.isnan(type_scores_averaged[i])]
+        #     type_feature_scores = [type_scores_averaged[i] for i in type_top_indices if not np.isnan(type_scores_averaged[i])]
 
-            # 创建一个新的图形和子图
-            fig = plt.figure(figsize=(15, 5))
-            ax = fig.add_subplot(111)
+        #     # 创建一个新的图形和子图
+        #     fig = plt.figure(figsize=(15, 5))
+        #     ax = fig.add_subplot(111)
 
-            ax.bar(type_feature_names, type_feature_scores)
-            ax.set_xlabel("Features")
-            ax.set_ylabel("Averaged Scores")
-            ax.set_title(f"Type: {_type} - Averaged Scores for Top Features")
-            ax.tick_params(axis='x', rotation=90)
+        #     ax.bar(type_feature_names, type_feature_scores)
+        #     ax.set_xlabel("Features")
+        #     ax.set_ylabel("Averaged Scores")
+        #     ax.set_title(f"Type: {_type} - Averaged Scores for Top Features")
+        #     ax.tick_params(axis='x', rotation=90)
 
-            # 保存图形到不同的文件名
-            plt.tight_layout()
-            plt.savefig(f"result/fisher_score/fisher_score_for_{_type}.png")
+        #     # 保存图形到不同的文件名
+        #     plt.tight_layout()
+        #     plt.savefig(f"result/fisher_score/fisher_score_for_{_type}.png")
 
-            start += 12
-            end += 12
+        #     start += 12
+        #     end += 12
 
 
         # 所有score的排名， 每个score是某个type and feature的score，故会有feature_name_num * type_name_num个score

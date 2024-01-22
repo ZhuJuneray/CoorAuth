@@ -102,11 +102,15 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
 
     # 处理超长的情况，saccades保留最后，fixation保留前面
     if len(range_sacaades) > saccades_num:
-        range_sacaades = range_sacaades[-saccades_num:]
+        range_sacaades = range_sacaades[-saccades_num:] if saccades_num != 0 else [] # 当saccades_num == 0时，[-0:]表示选择整个list，加特判解决 updated 20240122
     if len(range_fixation) > fixation_num:
         range_fixation = range_fixation[:fixation_num]
     # print(ranges, "range_sacaades", range_sacaades, "range_fix", range_fixation)
     ranges = range_fixation + range_sacaades  # 也即5个fixation和5个saccades
+
+    # print(f"range_saccades:{range_sacaades}")
+    # print(f"range_fixation{range_fixation}")
+    # print(f"ranges:{ranges}")
     # print("changed ranges", ranges)
 
     # update 1.1 改成了函数，获得序列本身的特征向量

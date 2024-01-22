@@ -69,7 +69,7 @@
 
 import numpy as np
 from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import f_classif
+from sklearn.feature_selection import f_classif 
 
 # 准备示例数据集（X是特征矩阵，y是目标变量）
 X = np.array([[1, 2, 3, 4, 5],

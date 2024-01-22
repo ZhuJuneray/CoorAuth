@@ -1,0 +1,24 @@
+{
+    "data": [
+        {
+            "studytype": "study1",
+            "names": 14,
+            "date": "1231",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 15,
+            "date": "0116",
+            "num_range": "1-1"
+        },
+        {
+            "studytype": "study1",
+            "names": 16,
+            "date": "0116",
+            "num_range": "1-1"
+        }
+        
+    ],
+    "latter_auth": []
+}
