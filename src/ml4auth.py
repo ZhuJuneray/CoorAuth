@@ -327,8 +327,8 @@ def knn_multi_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, labels=None):
     average_recalls = np.mean(recalls)
     average_f1s = np.mean(f1s)
 
-    # print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-    #       "\nf1s:", average_f1s)
+    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+          "\nf1s:", average_f1s)
     print("Average f1s", average_f1s)
 
 

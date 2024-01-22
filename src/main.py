@@ -9,15 +9,15 @@ from data_preprocess import data_augment_and_label, read_data_latter_data_json
 def main():
     current_working_directory = "D:\pycharm\srt_vr_auth"
     os.chdir(current_working_directory)  # cwd的绝对路径
-    positive_label = ['14']  # 正样本
+    positive_label = ['14', '17']  # 正样本
     model = 'head+eye'  # model
     n_split = 3  # k fold
     noise_level = 0.3  # noise level
-    augmentation_time = 1  # 高斯噪声做数据增强的倍数
+    augmentation_time = 10  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
-    all_pin_list = [1]  # pin list
+    all_pin_list = [1, 2, 3, 4, 5]  # pin list
     # 0120 update
-    json_name = 'data_own_3days.json'
+    json_name = 'data_given_3days.json'
     # json_name = 'data_condition.json'
     print(f"positive_label: {positive_label}, model: {model}, augmentation_time: {augmentation_time}")
     print(f"model:{model}, size_list: {size_list}")
@@ -43,29 +43,29 @@ def main():
         print(f"binary_labels_augmented:{binary_labels_augmented}")
         print(f"data_scaled:{data_scaled.shape}")
         # print(f"scaler_origin:{scaler_origin.mean_}, scaler_augment:{scaler_augment.mean_}")
-        # 原数据和标签跑机器学习模型
+        # 按照标准的ratio做增强
         print("")
         print("data augment for multiclass")
 
-        # print("---------knn_binary_kfold------------")
-        # knn_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
-        #                 n_splits=n_split)
-        #
-        # print("---------knn_multi_kfold------------")
-        # knn_multi_kfolds(data_scaled=data_scaled, labels=labels,
-        #                 n_splits=n_split)
+        print("---------knn_binary_kfold------------")
+        knn_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
+                        n_splits=n_split)
+
+        print("---------knn_multi_kfold------------")
+        knn_multi_kfolds(data_scaled=data_scaled, labels=labels,
+                        n_splits=n_split)
         
-        # print("----------svm_binary_kfold------------")
-        # svm_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
-        #                 n_splits=n_split)
+        print("----------svm_binary_kfold------------")
+        svm_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
+                        n_splits=n_split)
         
         print("-----------svm_multi_kfold------------")
         svm_multi_kfolds(data_scaled=data_scaled, labels=labels,
                         n_splits=n_split)
 
-        # print("------------mlp_binary_kfold------------")
-        # mlp_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
-        #                 n_splits=n_split)
+        print("------------mlp_binary_kfold------------")
+        mlp_binary_kfolds(data_scaled=data_scaled, binary_labels=binary_labels,
+                        n_splits=n_split)
 
         print("------------mlp_multi_kfold------------")
         mlp_multi_kfolds(data_scaled=data_scaled, labels=labels,
@@ -73,19 +73,19 @@ def main():
 
         # 数据增强后的数据和标签跑模型
         print("")
-        print("data augment for binary")
-
-        print("---------knn_binary_kfold------------")
-        knn_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-                        n_splits=n_split)
-        
-        print("----------svm_binary_kfold------------")
-        svm_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-                        n_splits=n_split)
-
-        print("------------mlp_binary_kfold------------")
-        mlp_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-                        n_splits=n_split)
+        # print("data augment for binary")
+        #
+        # print("---------knn_binary_kfold------------")
+        # knn_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+        #                 n_splits=n_split)
+        #
+        # print("----------svm_binary_kfold------------")
+        # svm_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+        #                 n_splits=n_split)
+        #
+        # print("------------mlp_binary_kfold------------")
+        # mlp_binary_kfolds(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+        #                 n_splits=n_split)
 
         ################################ 随时间推移重新检验部分
         # 日后新采的数据属性
@@ -106,9 +106,9 @@ def main():
         knn_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
                    latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
 
-        # print("---------knn_multi------------")
-        # knn_multi(data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled,
-        #           latter_labels=latter_labels)
+        print("---------knn_multi------------")
+        knn_multi(data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled,
+                  latter_labels=latter_labels)
 
         print("---------svm_binary------------")
         svm_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,

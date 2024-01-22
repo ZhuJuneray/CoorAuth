@@ -696,7 +696,8 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
 
     # 确定增强的正样本数量以达到大约50%的正样本比例
     total_samples_needed = len(binary_labels)  # 总样本数
-    positive_samples_needed = int(total_samples_needed) - 2 * len(positive_indices)  # 需要增强的正样本数
+    # positive_samples_needed = int(total_samples_needed) - 2 * len(positive_indices)  # 需要增强的正样本数
+    positive_samples_needed = 0
 
     # 如果需要增强的样本数为负数或零，则不执行任何操作
     if positive_samples_needed > 0:
@@ -718,6 +719,13 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
             pin_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][4]
             num_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][5]
 
+            # Add more debug prints
+            print("studytype_to_copy:", studytype_to_copy)
+            print("date_to_copy:", date_to_copy)
+            print("size_to_copy:", size_to_copy)
+            print("pin_to_copy:", pin_to_copy)
+            print("num_to_copy:", num_to_copy)
+
             member_to_copy = f"{studytype_to_copy}_{user_to_copy}_{date_to_copy}"  # 用于merged_array_generator的member参数
             # {studytype_to_copy[-1]}是为了根据studyn取VRAuth后面的数字
             head_path = rotdir + f"VRAuth2/P{user_to_copy}/Head_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
@@ -727,7 +735,7 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                                                                          eye_data_dir=eye_path,
                                                                          segment_data_dir=segment_path)
 
-            try: # 跳过saccade文件里只有一段fixation的情况，
+            try:# 跳过saccade文件里只有一段fixation的情况，
                 merged_array_augmented = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
                                                             member=member_to_copy, rotdir=rotdir, model=model,
                                                             size=size_to_copy, pin=pin_to_copy, num=num_to_copy,
