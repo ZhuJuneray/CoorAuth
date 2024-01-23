@@ -68,7 +68,7 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     # 如果range不空，则按照range中的start和end切分，saccades占slice_num - n段，fixation占n段
     range_fixation = []
     range_sacaades = []
-    fixation_num = 3
+    fixation_num = 0
     saccades_num = slice_num - fixation_num  # 每种切段的数量
     tmp_end = 0
     if ranges is not None:
@@ -119,6 +119,7 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     seq_second = get_n_derivation_features(np.diff(sequence), ranges)
 
     seq_all = np.concatenate([seq_initial, seq_second])
+    # seq_all = np.concatenate([seq_initial])
     return seq_all
 
 
@@ -185,6 +186,8 @@ def get_n_derivation_features(sequence, ranges):
                             features_std,
                            features_mad, features_iqr,
                             features_mc, features_wamp, features_ssc,  features_kurtosis, features_skewness])
+
+    # return np.concatenate([features_mean])
 
 
 def difference_gaze_lr_euler_angle(user, date, num):  # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
@@ -490,6 +493,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
         d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat
 
 
+
 def feature_process_angle(eye_data_dir=None, head_data_dir=None, noise_flag=False, noise_level=0.1):
     data_head = pd.read_csv(head_data_dir)
     Yaw_data = data_head['Yaw']
@@ -590,6 +594,8 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
             [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat,
              d3_el_feat,
              d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, ])
+        # merged_array = np.concatenate(
+        #     [d2_er_feat])
     elif model == "diff":
         diff_yaw_data = difference_gaze_head(member, size, pin, num, rotdir=rotdir, noise_flag=noise_flag,
                                              noise_level=noise_level)

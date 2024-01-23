@@ -1,7 +1,7 @@
 from ml4auth import knn_multi_kfolds, knn_multi, knn_binary, knn_binary_kfolds
 from ml4auth import svm_multi_kfolds, svm_multi, svm_binary, svm_binary_kfolds
 from dl4auth import mlp_multi_kfolds, mlp_binary_kfolds, mlp_binary, mlp_multi
-import os, json, re, sys
+import os, json, re, sys, time
 from data_preprocess import data_augment_and_label, read_data_latter_data_json
 
 
@@ -13,9 +13,9 @@ def main():
     model = 'head+eye'  # model
     n_split = 3  # k fold
     noise_level = 0.3  # noise level
-    augmentation_time = 10  # 高斯噪声做数据增强的倍数
+    augmentation_time = 4  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
-    all_pin_list = [1, 2, 3, 4, 5]  # pin list
+    all_pin_list = [4, 5]  # pin list
     # 0120 update
     json_name = 'data_given_3days.json'
     # json_name = 'data_condition.json'
@@ -38,9 +38,9 @@ def main():
             size_list=size_list, pin_list=pin_list,
             noise_level=noise_level, augment_time=augmentation_time)
 
-        print(f"labels:{labels}")
-        print(f"binary_labels:{binary_labels}")
-        print(f"binary_labels_augmented:{binary_labels_augmented}")
+        # print(f"labels:{labels}")
+        # print(f"binary_labels:{binary_labels}")
+        # print(f"binary_labels_augmented:{binary_labels_augmented}")
         print(f"data_scaled:{data_scaled.shape}")
         # print(f"scaler_origin:{scaler_origin.mean_}, scaler_augment:{scaler_augment.mean_}")
         # 按照标准的ratio做增强
@@ -128,12 +128,16 @@ def main():
 
 
 if __name__ == "__main__":
-    with open('output.txt', 'w') as file:  # 将print内容保存到文件
+    with open('mean_initial_only_saccade.txt', 'w') as file:  # 将print内容保存到文件
         # 保存当前的标准输出
         original_stdout = sys.stdout
         # 将标准输出重定向到文件
         sys.stdout = file
+        start_time = time.time()
         main()
+        end_time = time.time()
+        run_time = end_time - start_time
+        print(f"程序运行时间：{run_time}秒")
         # 恢复原来的标准输出
         sys.stdout = original_stdout
 

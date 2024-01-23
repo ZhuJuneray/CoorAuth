@@ -5,6 +5,7 @@ import os, json, re, sys
 from data_preprocess import data_augment_and_label, read_data_latter_data_json
 from sklearn.feature_selection import SelectKBest, f_classif
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 ################################################################ main
@@ -67,6 +68,7 @@ def main():
 
         segment_len = 10 # 切段数量
 
+        max_or_average = "average"
         # 取10段的平均，用scores_averaged表示
         for score in scores:
             _sum += score
@@ -132,41 +134,46 @@ def main():
                               "features_median", "features_rms", "features_std", "features_mad",
                               "features_iqr", "features_mc", "features_wamp", "features_ssc",
                                 "features_kurtosis", "features_skewness" ] # len: 14
+        
+        saccades_or_fixation = "saccades"
+        
 
-        # 画每一个type（feature）内不同统计学特征的score的图
         feature_name_num = len(feature_name_list) # feature的数量
         type_name_num = len(type_name_list) # type的数量
-        start = 0
-        end = feature_name_num
-
-        import matplotlib.pyplot as plt
-        fig1 = plt.figure(figsize=(60, 8))
-        for _type in type_name_list:
-            print(f"type:{_type}")
-            
-            type_scores_averaged = scores_averaged[start:end]
-            type_top_indices = np.argsort(type_scores_averaged)[::-1] #把type_scores里的元素从大到小排序，返回索引
-            # for i in type_top_indices: 
-            #     if not np.isnan(type_scores_averaged[i]):
-            #         print("    statistical feature: ", feature_name_list[i%feature_name_num] , type_scores_averaged[i])
-
-            type_feature_names = [feature_name_list[i % feature_name_num] for i in type_top_indices if not np.isnan(type_scores_averaged[i])]
-            type_feature_scores = [type_scores_averaged[i] for i in type_top_indices if not np.isnan(type_scores_averaged[i])]
-
-            # 创建一个子图
-            ax1 = fig1.add_subplot(1, len(type_name_list), type_name_list.index(_type) + 1)
-            ax1.bar(type_feature_names, type_feature_scores)
-            ax1.set_xlabel("Features")
-            ax1.set_ylabel("Averaged Scores")
-            ax1.set_title(f"{_type}")
-            ax1.tick_params(axis='x', rotation=90)
-
-            start += feature_name_num
-            end += feature_name_num
+       
+        # # 画每一个type（feature）内不同统计学特征的score的图
         
-        # 保存整体图形到一个PNG文件
-        plt.tight_layout()
-        plt.savefig("result/fisher_score/all_fisher_score_by_type.png")
+        # start = 0
+        # end = feature_name_num
+
+        
+        # fig1 = plt.figure(figsize=(60, 8))
+        # for _type in type_name_list:
+        #     print(f"type:{_type}")
+            
+        #     type_scores_averaged = scores_averaged[start:end]
+        #     type_top_indices = np.argsort(type_scores_averaged)[::-1] #把type_scores里的元素从大到小排序，返回索引
+        #     # for i in type_top_indices: 
+        #     #     if not np.isnan(type_scores_averaged[i]):
+        #     #         print("    statistical feature: ", feature_name_list[i%feature_name_num] , type_scores_averaged[i])
+
+        #     type_feature_names = [feature_name_list[i % feature_name_num] for i in type_top_indices if not np.isnan(type_scores_averaged[i])]
+        #     type_feature_scores = [type_scores_averaged[i] for i in type_top_indices if not np.isnan(type_scores_averaged[i])]
+
+        #     # 创建一个子图
+        #     ax1 = fig1.add_subplot(1, len(type_name_list), type_name_list.index(_type) + 1)
+        #     ax1.bar(type_feature_names, type_feature_scores)
+        #     ax1.set_xlabel("Features")
+        #     ax1.set_ylabel("Averaged Scores")
+        #     ax1.set_title(f"{_type}")
+        #     ax1.tick_params(axis='x', rotation=90)
+
+        #     start += feature_name_num
+        #     end += feature_name_num
+        
+        # # 保存整体图形到一个PNG文件
+        # plt.tight_layout()
+        # plt.savefig("result/fisher_score/all_fisher_score_by_type.png")
 
 
         # # 相当于把以上all的子图分别保存为一个.png
@@ -199,34 +206,85 @@ def main():
         #     end += 12
 
 
-        # 所有score的排名， 每个score是某个type and feature的score，故会有feature_name_num * type_name_num个score
+        # # 所有score的排名， 每个score是某个type and feature的score，故会有feature_name_num * type_name_num个score
+        # nan_indices = np.where(np.isnan(scores_averaged)) # 获取排序后的索引
+        # # # 从 scores 数组中去掉空值及其对应的索引
+        # nan_deleted_scores_averaged = np.delete(scores_averaged, nan_indices)
+        # # top_indices = np.argsort(scores)[-num_features_selected:]
+        # # print("nan deleted top_indices:", top_indices)
+        # # print(f"nan deleted top scores:{scores[top_indices]} ")
+        # sorted_indices = np.argsort(nan_deleted_scores_averaged)[::-1]
+
+        # print(f"sorted_indices:{sorted_indices}")
+
+        # # 获取排序后的特征名称和分数
+        # sorted_feature_names = [feature_name_list[i % feature_name_num] + " and " + type_name_list[i % type_name_num] for i in sorted_indices]
+        # sorted_scores = [nan_deleted_scores_averaged[i] for i in sorted_indices]
+        # print(f"sorted_feature_names:{sorted_feature_names}")
+        # print(f"sorted_scores:{sorted_scores}")
+
+        # # 创建条形图
+        # plt.figure(figsize=(40, 8))
+        # plt.bar(sorted_feature_names, sorted_scores)
+        # plt.xlabel("Features")
+        # plt.ylabel("Averaged Scores")
+        # plt.title("Averaged Scores for Features (Sorted by Score)")
+        # plt.xticks(rotation=90)
+        # plt.tight_layout()
+
+        # # 保存图形到文件
+        # plt.savefig(f"result/fisher_score/all_sorted_fisher_scores.png")
+
+
+
+        # 取前100个得分最高的score，统计所有type和feature（分开统计）的分数
         nan_indices = np.where(np.isnan(scores_averaged)) # 获取排序后的索引
         # # 从 scores 数组中去掉空值及其对应的索引
         nan_deleted_scores_averaged = np.delete(scores_averaged, nan_indices)
-        # top_indices = np.argsort(scores)[-num_features_selected:]
-        # print("nan deleted top_indices:", top_indices)
-        # print(f"nan deleted top scores:{scores[top_indices]} ")
         sorted_indices = np.argsort(nan_deleted_scores_averaged)[::-1]
+        sorted_indices = sorted_indices[:100] # 取前100个得分最高的score的索引
 
-        print(f"sorted_indices:{sorted_indices}")
-
-        # 获取排序后的特征名称和分数
-        sorted_feature_names = [feature_name_list[i % feature_name_num] + " and " + type_name_list[i % type_name_num] for i in sorted_indices]
-        sorted_scores = [nan_deleted_scores_averaged[i] for i in sorted_indices]
-        print(f"sorted_feature_names:{sorted_feature_names}")
-        print(f"sorted_scores:{sorted_scores}")
-
+        feature_score = [0] * feature_name_num # 用于存储每个feature的总分数
+        type_scores = [0] * type_name_num # 用于存储每个type的总分数
+        feature_name_to_display_list = [""] * feature_name_num
+        type_name_to_display_list = [""] * type_name_num
+        for i in sorted_indices:
+            feature_score[i % feature_name_num] += nan_deleted_scores_averaged[i] # 更新feature的总分数
+            feature_name_to_display_list[i % feature_name_num] = feature_name_list[i % feature_name_num] # 更新feature的名称
+            type_scores[i % type_name_num] += nan_deleted_scores_averaged[i] # 更新type的总分数
+            type_name_to_display_list[i % type_name_num] = type_name_list[i % type_name_num]
+        
+        # 对feature和type的总分数进行排序
+        feature_indices = np.argsort(feature_score)[::-1]
+        type_indices = np.argsort(type_scores)[::-1]
+        feature_score = [feature_score[i] for i in feature_indices]
+        feature_name_to_display_list = [feature_name_to_display_list[i] for i in feature_indices]
+        type_scores = [type_scores[i] for i in type_indices]
+        type_name_to_display_list = [type_name_to_display_list[i] for i in type_indices]
         # 创建条形图
-        plt.figure(figsize=(40, 8))
-        plt.bar(sorted_feature_names, sorted_scores)
+        plt.figure(figsize=(10, 8))
+        plt.bar(feature_name_to_display_list, feature_score) 
         plt.xlabel("Features")
-        plt.ylabel("Averaged Scores")
-        plt.title("Averaged Scores for Features (Sorted by Score)")
+        plt.ylabel("Total Scores(added from averaged scores)")
+        plt.title(f"Total Scores for each Features (Top100, added from averaged scores, {saccades_or_fixation}, {max_or_average})")
         plt.xticks(rotation=90)
         plt.tight_layout()
-
         # 保存图形到文件
-        plt.savefig(f"result/fisher_score/all_sorted_fisher_scores.png")
+        plt.savefig(f"result/fisher_score/total_feature_scores_{saccades_or_fixation}_{max_or_average}.png")
+        plt.close()
+
+        # 创建条形图
+        plt.figure(figsize=(10, 8))
+        plt.bar(type_name_to_display_list, type_scores)
+        plt.xlabel("Types")
+        plt.ylabel("Total Scores(added from averaged scores)")
+        plt.title(f"Total Scores for each Types (Top100, added from averaged scores, {saccades_or_fixation}, {max_or_average})")
+        plt.xticks(rotation=90)
+        plt.tight_layout()
+        # 保存图形到文件
+        plt.savefig(f"result/fisher_score/total_type_scores_{saccades_or_fixation}_{max_or_average}.png")
+        plt.close()
+
 
 
         # # 画通过一个feature的的score的图，每个feature通过其包含的所有type的score求平均
