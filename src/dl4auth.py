@@ -10,9 +10,9 @@ from data_preprocess import data_augment_and_label, read_data_latter_data_json
 
 ################################################################ mlp binary
 def mlp_binary(hidden_layer_sizes=(256, ), activation='relu', alpha=0.0001, max_iter=200,
-              data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None):
+              data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None, test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=test_size)
 
     # 数据标准化（仅在训练集上进行标准化，用相同的标准化器对测试集和未来数据进行标准化）
     scaler = StandardScaler()
@@ -64,9 +64,9 @@ def mlp_binary(hidden_layer_sizes=(256, ), activation='relu', alpha=0.0001, max_
 
 ################################################################ mlp multi
 def mlp_multi(hidden_layer_sizes=(256, ), activation='relu', alpha=0.0001, max_iter=200,
-              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
+              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None, test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=test_size)
 
     # 数据标准化（仅在训练集上进行标准化，用相同的标准化器对测试集和未来数据进行标准化）
     scaler = StandardScaler()

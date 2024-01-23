@@ -118,7 +118,7 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     # 1阶导
     seq_second = get_n_derivation_features(np.diff(sequence), ranges)
 
-    seq_all = np.concatenate([seq_initial, seq_second])
+    seq_all = np.concatenate([seq_initial])
     return seq_all
 
 
@@ -181,10 +181,9 @@ def get_n_derivation_features(sequence, ranges):
         features_wamp.append(wamp)  # zero
         features_ssc.append(ssc)  # low
 
-    return np.concatenate([features_mean, features_max, features_min, features_var, features_median, features_rms, 
-                            features_std,
-                           features_mad, features_iqr,
-                            features_mc, features_wamp, features_ssc,  features_kurtosis, features_skewness])
+    return np.concatenate([features_mean, features_max, features_min, features_var, features_median,])
+                           # features_rms, features_std, features_mad, features_iqr,
+                           #  features_mc, features_wamp, features_ssc,  features_kurtosis, features_skewness])
 
 
 def difference_gaze_lr_euler_angle(user, date, num):  # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始

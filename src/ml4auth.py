@@ -7,17 +7,17 @@ from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_f
 
 
 ################################################################ knn 二分类
-def knn_binary(n_neighbors=3,
-               data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None):
+def knn_binary(n_neighbors=3, data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None,
+               test_size=0.2):
     # 生成示例数据
     # labels = np.repeat(np.arange(num_people), authentications_per_person)
 
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=test_size)
     # X_test = np.concatenate((X_test, latter_data_scaled), axis=0)
     # y_test = np.concatenate((y_test, latter_labels), axis=0)
     # print("ytest", y_test)
-    # print("testing shape:", X_test.shape)
+    print("shape:", X_train.shape, X_test.shape)
 
     # 1231update 数据的标准化做在train set上
     scaler = StandardScaler()
@@ -73,10 +73,10 @@ def knn_binary(n_neighbors=3,
 
 
 ################################################################ knn 多分类
-def knn_multi(n_neighbors=3,
-              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
+def knn_multi(n_neighbors=3, data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None,
+              test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=test_size)
     # print("testing shape:", X_test.shape)
 
     # 1231update 数据的标准化做在train set上
@@ -120,11 +120,10 @@ def knn_multi(n_neighbors=3,
 
 
 ################################################################ svm 二分类
-def svm_binary(kernel="linear", C=1, gamma=0.02,
-               data_scaled=None, binary_labels=None
-               , latter_data_scaled=None, latter_labels=None):
+def svm_binary(kernel="linear", C=1, gamma=0.02, data_scaled=None, binary_labels=None,
+               latter_data_scaled=None, latter_labels=None, test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=test_size)
     # print("testing shape:", X_test.shape)
 
     # 1231update 数据的标准化做在train set上
@@ -179,10 +178,10 @@ def svm_binary(kernel="linear", C=1, gamma=0.02,
 
 
 ################################################################ svm 多分类
-def svm_multi(kernel="linear", C=1, gamma=0.02,
-              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
+def svm_multi(kernel="linear", C=1, gamma=0.02, data_scaled=None, labels=None,
+              latter_data_scaled=None, latter_labels=None, test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=test_size)
 
     # 1231update 数据的标准化做在train set上
     scaler = StandardScaler()
@@ -304,7 +303,7 @@ def knn_multi_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, labels=None):
     for train_index, test_index in kf.split(data_scaled, labels):
         X_train, X_test = data_scaled[train_index], data_scaled[test_index]
         y_train, y_test = labels[train_index], labels[test_index]
-
+        print(X_train.shape, X_test.shape)
         # 1231update 数据的标准化做在train set上
         scaler = StandardScaler()
         X_train = scaler.fit_transform(X_train)
