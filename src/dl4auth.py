@@ -10,9 +10,9 @@ from data_preprocess import data_augment_and_label, read_data_latter_data_json
 
 ################################################################ mlp binary
 def mlp_binary(hidden_layer_sizes=(256, ), activation='relu', alpha=0.0001, max_iter=200,
-              data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None):
+              data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None, test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=test_size)
 
     # 数据标准化（仅在训练集上进行标准化，用相同的标准化器对测试集和未来数据进行标准化）
     scaler = StandardScaler()
@@ -64,15 +64,15 @@ def mlp_binary(hidden_layer_sizes=(256, ), activation='relu', alpha=0.0001, max_
 
 ################################################################ mlp multi
 def mlp_multi(hidden_layer_sizes=(256, ), activation='relu', alpha=0.0001, max_iter=200,
-              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
+              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None, test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=test_size, stratify=labels)
 
     # 数据标准化（仅在训练集上进行标准化，用相同的标准化器对测试集和未来数据进行标准化）
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-    latter_data_scaled = scaler.transform(latter_data_scaled)
+
 
     # 创建MLP模型
     mlp_model = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes, activation=activation, alpha=alpha, max_iter=max_iter)
@@ -81,25 +81,28 @@ def mlp_multi(hidden_layer_sizes=(256, ), activation='relu', alpha=0.0001, max_i
 
     # 准确度
     accuracy = accuracy_score(y_test, y_pred)
-    print("准确度:", accuracy)
+    print("accuracy:", accuracy)
 
     # 混淆矩阵
     conf_matrix = confusion_matrix(y_test, y_pred)
-    print("混淆矩阵:")
+    print("confusion:")
     print(conf_matrix)
 
     # 精确度、召回率、F1分数
     precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted')
-    print("精确度:", precision)
-    print("召回率:", recall)
-    print("F1分数:", f1)
+    print("end")
+    print("precision:", precision)
+    print("recall:", recall)
+    print("f1:", f1)
 
-    # 对未来数据进行预测
-    latter_y_pred = mlp_model.predict(latter_data_scaled)
-    print(latter_y_pred, latter_labels)
+    if latter_labels is not None:
+        latter_data_scaled = scaler.transform(latter_data_scaled)
+        # 对未来数据进行预测
+        latter_y_pred = mlp_model.predict(latter_data_scaled)
+        print(latter_y_pred, latter_labels)
 
-    latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
-    print('随时间推移的准确率', latter_accuracy)
+        latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+        print('随时间推移的准确率', latter_accuracy)
 
 
 ################################################################ mlp binary kfold

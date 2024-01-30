@@ -4,7 +4,7 @@ import numpy as np
 import os
 from data_preprocess import read_data_name_from_json
 from collections import defaultdict
-def analyze_and_plot_time_size_pin_data(filepath="src/data_own_3days.json", size_list = [1, 2, 3, 4, 5, 6], pin_list = [1, 2, 3, 4]): #画每个size的用时
+def analyze_and_plot_time_size_pin_data(filepath="src/data_own_3days.json", size_list = [1, 2, 3, 4, 5, 6], pin_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]): #画每个size的用时
     # Initialize parameters
     
     rotdir = os.path.join(os.getcwd(), 'data/')
@@ -75,3 +75,5 @@ def analyze_and_plot_time_size_pin_data(filepath="src/data_own_3days.json", size
     # Save the figure
     plt.savefig(os.path.join(folder_name, "average_time_for_different_sizes_and_pins.png"))
     plt.close()  # Close the plot to avoid displaying it when not needed
+
+analyze_and_plot_time_size_pin_data()

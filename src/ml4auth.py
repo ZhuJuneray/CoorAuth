@@ -1,23 +1,26 @@
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.utils import shuffle
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, classification_report
+from selection_calculate import calculate_frr_far
 
 
 ################################################################ knn 二分类
-def knn_binary(n_neighbors=3,
-               data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None):
+def knn_binary(n_neighbors=3, data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None,
+               test_size=0.2):
     # 生成示例数据
     # labels = np.repeat(np.arange(num_people), authentications_per_person)
 
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=test_size)
     # X_test = np.concatenate((X_test, latter_data_scaled), axis=0)
     # y_test = np.concatenate((y_test, latter_labels), axis=0)
     # print("ytest", y_test)
-    # print("testing shape:", X_test.shape)
+    print("shape:", X_train.shape, X_test.shape)
 
     # 1231update 数据的标准化做在train set上
     scaler = StandardScaler()
@@ -73,17 +76,28 @@ def knn_binary(n_neighbors=3,
 
 
 ################################################################ knn 多分类
-def knn_multi(n_neighbors=3,
-              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
+def knn_multi(n_neighbors=3, data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None,
+              test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=test_size, stratify=labels)
     # print("testing shape:", X_test.shape)
+
+    # 获取排序后的索引
+    train_sort_indices = np.argsort(y_train)
+    test_sort_indices = np.argsort(y_test)
+
+    # 使用索引重新排序 X_train 和 X_test
+    X_train = X_train[train_sort_indices]
+    X_test = X_test[test_sort_indices]
+
+    # 使用排序后的 y_train 和 y_test
+    y_train = np.sort(y_train)
+    y_test = np.sort(y_test)
 
     # 1231update 数据的标准化做在train set上
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-    latter_data_scaled = scaler.transform(latter_data_scaled)
 
     # 创建KNN模型
     knn_model = KNeighborsClassifier(n_neighbors=n_neighbors)
@@ -92,39 +106,36 @@ def knn_multi(n_neighbors=3,
 
     # 准确度
     accuracy = accuracy_score(y_test, y_pred)
-    print("准确度:", accuracy)
+    print("accuracy:", accuracy)
 
     # 混淆矩阵
     conf_matrix = confusion_matrix(y_test, y_pred)
-    print("混淆矩阵:")
+    print("confusion:")
     print(conf_matrix)
 
     # 精确度、召回率、F1分数
     precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted')
     # precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary')
-    print("精确度:", precision)
-    print("召回率:", recall)
-    print("F1分数:", f1)
+    print("end")
+    print("precision:", precision)
+    print("recall:", recall)
+    print("f1:", f1)
 
-    # if not np.isnan(latter_data_scaled):
-    latter_y_pred = knn_model.predict(latter_data_scaled)
-    print(latter_y_pred, latter_labels)
+    if latter_labels is not None:
+        latter_data_scaled = scaler.transform(latter_data_scaled)
+        # if not np.isnan(latter_data_scaled):
+        latter_y_pred = knn_model.predict(latter_data_scaled)
+        print(latter_y_pred, latter_labels)
 
-    latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
-    print('随时间推移的准确率', latter_accuracy)
-
-    # # 分类报告
-    # class_report = classification_report(y_test, y_pred)
-    # print("分类报告:")
-    # print(class_report)
+        latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+        print('随时间推移的准确率', latter_accuracy)
 
 
 ################################################################ svm 二分类
-def svm_binary(kernel="linear", C=1, gamma=0.02,
-               data_scaled=None, binary_labels=None
-               , latter_data_scaled=None, latter_labels=None):
+def svm_binary(kernel="linear", C=1, gamma=0.02, data_scaled=None, binary_labels=None,
+               latter_data_scaled=None, latter_labels=None, test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, binary_labels, test_size=test_size)
     # print("testing shape:", X_test.shape)
 
     # 1231update 数据的标准化做在train set上
@@ -179,16 +190,74 @@ def svm_binary(kernel="linear", C=1, gamma=0.02,
 
 
 ################################################################ svm 多分类
-def svm_multi(kernel="linear", C=1, gamma=0.02,
-              data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
+def svm_multi(kernel="linear", C=1, gamma=0.02, data_scaled=None, labels=None,
+              latter_data_scaled=None, latter_labels=None, test_size=0.2):
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=test_size, stratify=labels)
+
+    # # 初始化空的测试集和训练集
+    # X_test = []
+    # y_test = []
+    # X_train = []
+    # y_train = []
+    # # 设定测试集和训练集的大小比例
+    # test_size = 20
+    # train_size = 20
+    #
+    # # 计算总的测试集和训练集的个数
+    # num_samples = len(data_scaled)
+    # print('num_samples', num_samples)
+    # num_test_sets = num_samples // (test_size + train_size)
+    #
+    # # 数据标准化
+    # scaler = StandardScaler()
+    #
+    # # 循环划分数据集
+    # for i in range(num_test_sets):
+    #     start_idx = i * (test_size + train_size)
+    #     end_idx_test = start_idx + test_size
+    #     end_idx_train = end_idx_test + train_size
+    #
+    #     # 划分测试集
+    #     X_test_set = data_scaled[start_idx:end_idx_test]
+    #     y_test_set = labels[start_idx:end_idx_test]
+    #
+    #     # 划分训练集
+    #     X_train_set = data_scaled[end_idx_test:end_idx_train]
+    #     y_train_set = labels[end_idx_test:end_idx_train]
+    #     # print("X_train_start", end_idx_test, "X_train_end", end_idx_train)
+    #     # 将划分好的测试集和训练集添加到总集合中
+    #     print("labels", y_test_set, " ", y_train_set)
+    #     X_test.append(X_test_set)
+    #     y_test.append(y_test_set)
+    #     X_train.append(X_train_set)
+    #     y_train.append(y_train_set)
+    #
+    # # 将列表转换为 NumPy 数组
+    # X_test = np.concatenate(X_test, axis=0)
+    # y_test = np.concatenate(y_test, axis=0)
+    # X_train = np.concatenate(X_train, axis=0)
+    # y_train = np.concatenate(y_train, axis=0)
+    #
+    # X_train, y_train = shuffle(X_train, y_train)
+    # X_test, y_test = shuffle(X_test, y_test)
+
+    # train_sort_indices = np.argsort(y_train)
+    # test_sort_indices = np.argsort(y_test)
+    #
+    # # 使用索引重新排序 X_train 和 X_test
+    # X_train = X_train[train_sort_indices]
+    # X_test = X_test[test_sort_indices]
+    #
+    # # 使用排序后的 y_train 和 y_test
+    # y_train = np.sort(y_train)
+    # y_test = np.sort(y_test)
 
     # 1231update 数据的标准化做在train set上
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-    latter_data_scaled = scaler.transform(latter_data_scaled)
+
 
     # 创建svm模型
     svm_model = SVC(kernel=kernel, C=C, gamma=gamma, probability=True)
@@ -197,27 +266,100 @@ def svm_multi(kernel="linear", C=1, gamma=0.02,
 
     # 准确度
     accuracy = accuracy_score(y_test, y_pred)
-    print("准确度:", accuracy)
+    print("accuracy:", accuracy)
 
     # 混淆矩阵
     conf_matrix = confusion_matrix(y_test, y_pred)
-    print("混淆矩阵:")
+    print("confusion:")
     print(conf_matrix)
+    frr_list = []
+    far_list = []
+    for i in range(17):
+        frr, far = calculate_frr_far(conf_matrix, i)
+        frr_list.append(frr)
+        far_list.append(far)
+
+    frr_mean = np.mean(frr_list)
+    far_mean = np.mean(far_list)
+    frr_std = np.std(frr_list) / np.sqrt(len(frr_list))
+    far_std = np.std(far_list) / np.sqrt(len(far_list))
+    print(f"Frr: {frr_mean}, Far: {far_mean}, StdFrr: {frr_std}, StdFar: {far_std}")
 
     # 精确度、召回率、F1分数
     precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted')
     # precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary')
-    print("精确度:", precision)
-    print("召回率:", recall)
-    print("F1分数:", f1)
-    # if not np.isnan(latter_data_scaled):
-    latter_y_pred = svm_model.predict(latter_data_scaled)
-    latter_confidence = svm_model.decision_function(latter_data_scaled)
-    print(latter_y_pred, latter_labels)
-    print("Confidence", latter_confidence)
+    print("end")
+    print("precision:", precision)
+    print("recall:", recall)
+    print("f1:", f1)
 
-    latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
-    print('随时间推移的准确率', latter_accuracy)
+    if latter_labels is not None:
+        latter_data_scaled = scaler.transform(latter_data_scaled)
+        # if not np.isnan(latter_data_scaled):
+        latter_y_pred = svm_model.predict(latter_data_scaled)
+        latter_confidence = svm_model.decision_function(latter_data_scaled)
+        print(latter_y_pred, latter_labels)
+        print("Confidence", latter_confidence)
+
+        latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+        print('随时间推移的准确率', latter_accuracy)
+
+
+############################################################### rf
+def rf_multi(n_estimators=100, data_scaled=None, labels=None,
+              latter_data_scaled=None, latter_labels=None, test_size=0.2):
+    # 划分数据集
+    X_train, X_test, y_train, y_test = train_test_split(data_scaled, labels, test_size=test_size, stratify=labels)
+    # 1231update 数据的标准化做在train set上
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+
+    # 创建svm模型
+    svm_model = RandomForestClassifier(n_estimators=n_estimators)
+    svm_model.fit(X_train, y_train)
+    y_pred = svm_model.predict(X_test)
+
+    # 准确度
+    accuracy = accuracy_score(y_test, y_pred)
+    print("accuracy:", accuracy)
+
+    # 混淆矩阵
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    print("confusion:")
+    print(conf_matrix)
+    frr_list = []
+    far_list = []
+    for i in range(17):
+        frr, far = calculate_frr_far(conf_matrix, i)
+        frr_list.append(frr)
+        far_list.append(far)
+
+    frr_mean = np.mean(frr_list)
+    far_mean = np.mean(far_list)
+    frr_std = np.std(frr_list) / np.sqrt(len(frr_list))
+    far_std = np.std(far_list) / np.sqrt(len(far_list))
+    print(f"Frr: {frr_mean}, Far: {far_mean}, StdFrr: {frr_std}, StdFar: {far_std}")
+
+    # 精确度、召回率、F1分数
+    precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted')
+    # precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary')
+    print("end")
+    print("precision:", precision)
+    print("recall:", recall)
+    print("f1:", f1)
+
+    if latter_labels is not None:
+        latter_data_scaled = scaler.transform(latter_data_scaled)
+        # if not np.isnan(latter_data_scaled):
+        latter_y_pred = svm_model.predict(latter_data_scaled)
+        latter_confidence = svm_model.decision_function(latter_data_scaled)
+        print(latter_y_pred, latter_labels)
+        print("Confidence", latter_confidence)
+
+        latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+        print('随时间推移的准确率', latter_accuracy)
 
 
 ################################################################ knn kfold 二分类
@@ -304,7 +446,7 @@ def knn_multi_kfolds(n_neighbors=3, n_splits=5, data_scaled=None, labels=None):
     for train_index, test_index in kf.split(data_scaled, labels):
         X_train, X_test = data_scaled[train_index], data_scaled[test_index]
         y_train, y_test = labels[train_index], labels[test_index]
-
+        print(X_train.shape, X_test.shape)
         # 1231update 数据的标准化做在train set上
         scaler = StandardScaler()
         X_train = scaler.fit_transform(X_train)
@@ -429,6 +571,56 @@ def svm_multi_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scaled=N
 
         # 创建SVM模型
         svm_model = SVC(kernel=kernel, C=C, gamma=gamma)
+
+        # 模型训练
+        svm_model.fit(X_train, y_train)
+
+        # 模型预测
+        y_pred = svm_model.predict(X_test)
+
+        # 计算准确性
+        accuracy = accuracy_score(y_test, y_pred)
+        accuracies.append(accuracy)
+
+        precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted', zero_division=1)
+        precisions.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+
+    average_accuracy = np.mean(accuracies)
+    average_precision = np.mean(precisions)
+    average_recalls = np.mean(recalls)
+    average_f1s = np.mean(f1s)
+
+    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+          "\nf1s:", average_f1s)
+
+
+################################################################ svm kfold 多分类
+def rf_multi_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None):
+    for label in np.unique(labels):
+        count = np.sum(labels == label)
+        # print(f"Class {label}: {count} samples")
+    # 设置交叉验证的折叠数
+    kf = StratifiedKFold(n_splits=n_splits, shuffle=True)
+
+    # 初始化准确性列表，用于存储每个折叠的模型准确性
+    accuracies = []
+    precisions = []
+    recalls = []
+    f1s = []
+
+    for train_index, test_index in kf.split(data_scaled, labels):
+        X_train, X_test = data_scaled[train_index], data_scaled[test_index]
+        y_train, y_test = labels[train_index], labels[test_index]
+
+        # 1231update 数据的标准化做在train set上
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+
+        # 创建SVM模型
+        svm_model = RandomForestClassifier(n_estimators=n_estimators)
 
         # 模型训练
         svm_model.fit(X_train, y_train)
