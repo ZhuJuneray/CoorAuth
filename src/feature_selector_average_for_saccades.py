@@ -19,9 +19,8 @@ def main():
     augmentation_time = 1  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
     all_pin_list = [1]  # pin list
-    # 0120 update
     json_name = 'data_feature_selection.json'
-    # json_name = 'data_condition.json'
+
     print(f"positive_label: {positive_label}, model: {model}, augmentation_time: {augmentation_time}")
     print(f"model:{model}, size_list: {size_list}")
     print(f"studytype_users_dates_range: {read_data_latter_data_json(current_working_directory+'/src/'+json_name)[0]}")
@@ -135,7 +134,7 @@ def main():
                               "features_iqr", "features_mc", "features_wamp", "features_ssc",
                                 "features_kurtosis", "features_skewness" ] # len: 14
         
-        saccades_or_fixation = "saccades"
+        saccades_or_fixation = "1saccadeALL"
         
 
         feature_name_num = len(feature_name_list) # feature的数量
@@ -261,6 +260,7 @@ def main():
         feature_name_to_display_list = [feature_name_to_display_list[i] for i in feature_indices]
         type_scores = [type_scores[i] for i in type_indices]
         type_name_to_display_list = [type_name_to_display_list[i] for i in type_indices]
+
         # 创建条形图
         plt.figure(figsize=(10, 8))
         plt.bar(feature_name_to_display_list, feature_score) 

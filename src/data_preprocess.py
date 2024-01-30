@@ -74,7 +74,10 @@ def extract_features(sequence, slice_num=10, ranges=None):  # 把序列切成十
     if ranges is not None:
         for start, end in ranges:
             range_fixation.append([start, end])
-            range_sacaades.append([tmp_end, start]) if tmp_end != 0 else None
+            # 只取第一个saccade
+            range_sacaades.append([ranges[0][1], ranges[1][0]]) 
+            # 只取第一个saccade
+            # range_sacaades.append([tmp_end, start]) if tmp_end != 0 else None
             tmp_end = end
         # 长度不足, 使用已经添加过的数据来填充 fixation使用第一段填充，saccades用最后一段填充
         while len(range_fixation) < fixation_num:

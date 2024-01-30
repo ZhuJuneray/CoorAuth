@@ -14,7 +14,11 @@ import re, json
 import itertools
 from data_preprocess import read_data_name_from_json
 from collections import defaultdict
-
+from scipy import stats
+import pingouin as pg
+from difflib import SequenceMatcher
+import warnings, sys
+import seaborn as sns
 
 # os.chdir(os.path.join(os.getcwd(),'data'))
 
@@ -719,27 +723,76 @@ class Drawer: # 画json里的数据的图
 
     def calculate_times(self):
         times = defaultdict(lambda: defaultdict(list))
+        times_for_size_user_pin = defaultdict(lambda: defaultdict(list))
+        times_for_size = defaultdict(list)
+        # 创建一个空的DataFrame
+        user_size_pin_time_df = pd.DataFrame(columns=['User', 'Size', 'Pin', 'Time'])
+                        
         for member in self.studytype_users_dates:
             studytype, user, date = member.split('-')
             for size in self.size_list:
                 for pin in self.pin_list:
                     prefix = f"Head_data_{studytype}-{user}-{date}-{size}-{pin}-"
-                    for file in os.listdir(self.rotdir + f"VRAuthStudy1-{member.split('-')[2]}/P{user}"):
-                        if file.startswith(prefix) and file.endswith(".csv"):
+                    for file in os.listdir(os.path.join(self.rotdir , f"VRAuthStudy1-{member.split('-')[2]}/P{user}")):
+                        if file.startswith(prefix) and file.endswith(".csv"): # 寻找某一date-user-size-pin下的所有num的数据
                             file_path = os.path.join(self.rotdir, f"VRAuthStudy1-{member.split('-')[2]}/P{user}", file)
                             data = pd.read_csv(file_path)
                             time = len(data) * 0.02
-                            if time <= 10 and time>=0.5:  # Exclude unreasonable times
+                            if time <= 10 and time>=1:  # Exclude unreasonable times
                                 times[size][pin].append(time)
+                                times_for_size[size].append(time)
+                                user_size_pin_time_df = user_size_pin_time_df._append({'User': user, 'Size': size, 'Pin': pin, 'Time': time}, ignore_index=True)
 
-        # Calculate average times
+        for member in self.studytype_users_dates:
+            studytype, user, date = member.split('-')
+            for size in self.size_list:
+                for pin in self.pin_list:
+                    # 创建一个空列表来存储数据
+                    data = []
+
+                    # 填充数据列表
+                    for size, times_ in times_for_size.items():
+                        for time in times_:
+                            data.append({'Size': size, 'Time': time})
+
+                    # 创建DataFrame
+                    df = pd.DataFrame(data)
+
+
+        # 使用groupby计算每个Size的中位数
+        median_times_df = df.groupby('Size')['Time'].median()
+        print(median_times_df)
+        for member in self.studytype_users_dates:
+            studytype, user, date = member.split('-')
+            for size in self.size_list:
+                for pin in self.pin_list:
+                    sig = 0
+                    for row in user_size_pin_time_df.itertuples():
+                        if row[1] == user and row[2] == size and row[3] == pin:
+                            sig = 1
+                            break
+                    if sig == 0:
+                        user_size_pin_time_df = user_size_pin_time_df._append({'User': user, 'Size': size, 'Pin': pin, 'Time': median_times_df[size]}, ignore_index=True)
+        print(user_size_pin_time_df)
+
+        # Calculate average times for each (size, pin)
         average_times = defaultdict(dict)
         for size, pins in times.items():
             for pin, time_list in pins.items():
                 if time_list:  # Ensure we don't divide by zero
                     average_times[size][pin] = sum(time_list) / len(time_list)
+        print(average_times)
+        # 执行RMANOVA
+        print(user_size_pin_time_df.shape)
+        user_size_pin_time_df.to_excel("user_size_pin_time_df.xlsx", index=False)
+        from statsmodels.stats.anova import AnovaRM
+        aovrm = AnovaRM(user_size_pin_time_df, 'Time', 'User', within=['Size', 'Pin'])
+        res = aovrm.fit()
 
-        return average_times
+        # 打印结果
+        print(res.summary())
+
+        return average_times, times_for_size, times_for_size_user_pin
 
     def plot_time_per_size(self, average_times):
         size_avg_times = []
@@ -758,7 +811,52 @@ class Drawer: # 画json里的数据的图
                                  self.studytype_users_dates[0].split('-')[0] + "average_time_for_different_sizes.png"))
         plt.close()
 
-    def plot_time_per_size_pin(self, average_times):
+    def plot_time_per_size_group_by_pin(self, average_times):
+        data = {}
+        posthoc_results = {}
+        # for pin in self.pin_list:
+        #     posthoc = pg.pairwise_tests(data=df_subset, dv='Score', within='S', subject='P', padjust='bonferroni')
+        #     posthoc_results[question] = posthoc
+        #     for size in self.size_list:
+        #         data.setdefault(pin, []).append(average_times.get(size, {}).get(pin, 0))
+        
+        
+        # Dynamic adjustments
+        num_pins = len(self.pin_list)
+        num_sizes = len(self.size_list)
+        total_bar_width = 0.8  # Total width for all bars in one group
+        bar_width = total_bar_width / num_sizes  # Individual bar width
+        pin_indices = np.arange(num_pins)  # Pin x-axis positions
+
+        # Dynamic figure size
+        fig_width = num_pins * num_sizes  # Adjust the figure width as needed
+        plt.figure(figsize=(fig_width, 0.15*fig_width))  # Set a dynamic figure size
+        colors = plt.cm.Blues(np.linspace(0.15, 0.85, num_sizes + 2))
+
+        # Plotting each size's bar for each pin
+        for i, size in enumerate(self.size_list):
+            size -=2
+            pin_times = [data[j][size] for j in self.pin_list]
+            bars = plt.bar(pin_indices + i * bar_width, pin_times, width=bar_width, label=f'Size {size+1}', color = colors[i], edgecolor='grey')
+
+            # Annotating each bar with the size label
+            # for bar in bars:
+            #     yval = bar.get_height()
+            #     plt.text(bar.get_x() + bar.get_width() / 2, yval, f'Size {size+1}', ha='center', va='bottom')
+
+        # Setting chart labels and title
+        # plt.xlabel('Pin')
+        plt.grid(axis='y', linestyle='--', alpha=0.7, color='gray')
+        plt.legend(fontsize = 16)
+        plt.ylabel('Average Input Time (s)', fontsize = 18)
+        # plt.title(self.studytype_users_dates[0].split('-')[0] + ' Average Time for Different Pins and Sizes')
+        plt.xticks(pin_indices + total_bar_width / 2 - bar_width / 2, self.pin_list, fontsize = 18)  # Center the x-ticks
+        plt.xlabel('Pin', fontsize = 18)
+        plt.savefig(os.path.join(self._create_result_folder("average_time_for_different_sizes_and_pins"),
+                                self.studytype_users_dates[0].split('-')[0] + "average_time_for_different_pins_and_sizes_group_by_pin.png"))
+        plt.close()
+
+    def plot_time_per_pin_group_by_size(self, average_times):
         data = {}
         for size in self.size_list:
             for pin in self.pin_list:
@@ -792,7 +890,74 @@ class Drawer: # 画json里的数据的图
         plt.xticks(size_indices + total_bar_width / 2 - bar_width / 2, self.size_list)  # Center the x-ticks
 
         plt.savefig(os.path.join(self._create_result_folder("average_time_for_different_sizes_and_pins"),
-                                 self.studytype_users_dates[0].split('-')[0] + "average_time_for_different_sizes_and_pins.png"))
+                                 self.studytype_users_dates[0].split('-')[0] + "average_time_for_different_sizes_and_pins_group_by_size.png"))
+        plt.close()
+
+    def plot_time_per_size_boxplot(self, times_for_size):
+        # 准备数据
+        sizes = list(times_for_size.keys())
+        times = [times_for_size[size] for size in sizes]
+
+        # 创建一个图形对象和坐标轴
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # 设置箱线图的箱体颜色渐变
+        colors = plt.cm.Blues(np.linspace(0.15, 0.85, len(sizes) + 2))
+        median_props = dict(linestyle='-', color='black')
+        
+        # 绘制箱线图，使用patch_artist参数为箱体设置颜色
+        box = ax.boxplot(times, labels=['1', '2', '3', '4'], patch_artist=True, medianprops=median_props)
+
+        # 自定义每个箱体的颜色
+        for patch, color in zip(box['boxes'], colors):
+            patch.set_facecolor(color)
+        # 添加纵坐标major刻度的灰色虚线
+        ax.yaxis.grid(True, linestyle='--', alpha=0.7, color='gray')
+
+        # 设置坐标轴标签和标题
+        ax.set_xlabel("Size", fontsize=14)
+        ax.set_ylabel("Input Time(s)", fontsize=14)
+        
+        fig.savefig(os.path.join(self._create_result_folder("study1"),
+                                 "input_time_boxplot.png"))
+        plt.close()
+
+        # Create a single figure with four subplots arranged horizontally
+        fig, axs = plt.subplots(1, 4, figsize=(16, 4))
+
+        for i, (size, data) in enumerate(zip(sizes, times)):
+            # Calculate the parameters for the fitted normal distribution
+            mu, std = stats.norm.fit(data)
+
+            # Create a histogram on the i-th subplot with white borders
+            n, bins, patches = axs[i].hist(data, bins=20, density=True, alpha=0.6, color=plt.cm.GnBu(0.8), label='Histogram', edgecolor='white') # Density是用来归一化的
+
+            # Plot the fitted normal distribution curve on the same subplot
+            y = stats.norm.pdf(bins, mu, std)
+            axs[i].plot(bins, y, 'r-', linewidth=1, label='Normal Fit')
+
+            # Add legend only to the first subplot
+            if i == 0:
+                axs[i].legend()
+
+            # Remove right and top spines/borders
+            axs[i].spines['right'].set_visible(False)
+            axs[i].spines['top'].set_visible(False)
+
+            # Add a gray dashed line to the y-axis major ticks on each subplot
+            axs[i].yaxis.grid(True, linestyle='--', alpha=0.7, color='gray')
+            axs[i].set_xlabel(f'Input Time(s)\nSize: {size-1}', fontsize=14)
+            axs[i].set_ylabel('Density', fontsize=14)
+
+        # Set the title below the subplots
+        # plt.suptitle("Normality Test for Different Sizes", y=0.92)
+
+        # Adjust the layout to prevent overlapping
+        plt.tight_layout()
+
+        # Save the combined figure as a single PNG file
+        result_folder = self._create_result_folder("study1")
+        plt.savefig(os.path.join(result_folder, "combined_normality_tests.png"))
         plt.close()
 
     # Method to plot eye data
@@ -927,7 +1092,8 @@ class Drawer: # 画json里的数据的图
                 for pin in self.pin_list:
                     for num in range(self.default_authentications_per_person):
                         # Create a figure with subplots for each angle comparison
-                        fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+                        # fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+                        fig, axes = plt.subplots(1, 3, figsize=(30, 5))
 
                         # Determine the path for the specific text file
                         text_filename = f"Saccades_{member}-{size}-{pin}-{num+1}.txt"
@@ -985,9 +1151,295 @@ class Drawer: # 画json里的数据的图
                             os.makedirs(plot_folder)
 
                         # Define the plot filename
-                        plot_filename = f"Combined_Eye_Head_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1}_Angle.png"
+                        plot_filename = f"Combined_Eye_Head_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1}_Angle_horizontal.png"
                         fig.savefig(os.path.join(plot_folder, plot_filename))
                         plt.close(fig)
+
+    def pin_error_rate(self, rotdir=None):
+
+        plt.rcParams['axes.labelsize'] = 14  # x和y轴的标签大小
+        plt.rcParams['axes.titlesize'] = 16  # 轴标题的大小
+        plt.rcParams['xtick.labelsize'] = 14 # x轴刻度标签的大小
+        plt.rcParams['ytick.labelsize'] = 14 # y轴刻度标签的大小
+        plt.rcParams['legend.fontsize'] = 14 # 图例的字体大小
+        missing_check_dict = {'68':'678', '86':'876', '35':'345', '53':'543', '02': '012', '20': '210',
+                        '06': '036', '60': '630', '17':'147', '71':'741', '28':'258', '82':'852',
+                        '62': '642', '26': '246', '80': '840', '08': '048'}
+        
+        pin1 = "67852"
+        pin2 = "6785"
+        pin3 = "6784"
+        pin4 = "6745"
+        pin5 = "6425"
+        pin6 = "04852"
+        pin7 = "63012"
+        pin8 = "84012"
+        pin9 = "67840"
+        pin10 = "3012"
+        pin11 = "67412"
+        pin12 = "7412"
+        pin13 = "6784012"
+        pin14 = "64258"
+        pin15 = "730125"
+        pin16 = "6785210"
+        pin17 = "6421"
+        pin18 = "48523"
+
+        correct_pin_dict = {1: pin1, 2: pin2, 3: pin3, 4: pin4, 5: pin5, 6: pin6, 7: pin7, 8: pin8, 9: pin9,
+                    10: pin10, 11: pin11, 12: pin12, 13: pin13, 14: pin14, 15: pin15, 16: pin16, 17: pin17, 18: pin18}
+        
+        # 储存每个pin在每个size下的输入结果
+        input_pin_result_dict = defaultdict(lambda: defaultdict(list)) # {size: {pin: [input_pin1, input_pin2, ...]}}
+
+        # 储存完全匹配的每个结果的准确率
+        correct_pin_accuracy_dict = defaultdict(lambda: defaultdict(list)) # {size: {pin: [accuracy1, accuracy2, ...]}}
+
+        # 储存编辑距离的每个输入结果的准确率
+        edit_distance_accuracy_dict = defaultdict(lambda: defaultdict(list)) # {size: {pin: [accuracy1, accuracy2, ...]}}
+
+        # 储存自串匹配的每个输入结果的准确率
+        substring_accuracy_dict = defaultdict(lambda: defaultdict(list)) # {size: {pin: [accuracy1, accuracy2, ...]}}
+
+        # Loop to process and plot data
+        for member in self.studytype_users_dates:
+            date = member.split('-')[2]
+            user = member.split('-')[1]  # Adjust according to how user is identified in your data
+            for size in self.size_list:
+                for pin in self.pin_list:
+                    for num in range(self.default_authentications_per_person):
+                        # Create a figure with subplots for each angle comparison
+                        # fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+                        # fig, axes = plt.subplots(1, 3, figsize=(30, 5))
+
+                        # Determine the path for the specific text file
+                        text_filename = f"PINEntry_{member}-{size}-{pin}-{num+1}.txt"
+                        text_file_path = os.path.join(rotdir, f"VRAuthStudy1-{member.split('-')[2]}/P{user}/{text_filename}")
+                        # Read and parse text data from the file
+                        try:
+                            with open(text_file_path, 'r') as file:
+                                text_data = file.read().strip()
+                                # print(f"text_data: {text_data}")
+                                input_pin = ''.join([i for i in text_data.split('-') if i]) # get pin input string like '684012'
+                                    # Parse the ranges from the text data
+                                    # input_pin = [list(map(int, r.split('-'))) for r in text_data.split(';') if r]
+                        except FileNotFoundError:
+                            warnings.warn(f"File {text_file_path} not found")
+                            # input_pin = []  # No input_pin to add if file is not found
+                            continue
+                        
+                        for i in range(len(input_pin)-1): # 补充三点共线时中间点未识别的情况
+                            for key, value in missing_check_dict.items():
+                                if input_pin[i] + input_pin[i+1] == key:
+                                    input_pin = input_pin[:i] + value + input_pin[i+2:]
+                                    break
+                        print(f"date: {date}, user: {user}, size: {size}, pin: {pin}, num: {num+1}, input_pin: {input_pin}")
+                        
+                        input_pin_result_dict[size][pin].append(input_pin)
+                        # save input_pin_resul_dict to .txt file
+                        # 假设文件名为output.txt
+                        # output_filename = "input_pin_resul_dict.txt"
+
+                        # 将字典保存为JSON文件
+                        # with open(output_filename, 'w') as file:
+                        #     json.dump(input_pin_result_dict, file)
+                        
+                        
+        # 计算每个size下每个pin的错误率
+        for size, pin_dict in input_pin_result_dict.items():
+            for pin, input_pin_list in pin_dict.items():
+                for input_pin_str in input_pin_list:
+                    correct_pin = correct_pin_dict[pin]
+                    # 计算完全匹配的准确率
+                    # correct_pin_accuracy_dict[size][pin].append( 1 if input_pin_str == correct_pin else 0 ) #accuracy
+                    correct_pin_accuracy_dict[size][pin].append( 0 if input_pin_str == correct_pin else 1 ) # error rate
+                    # 计算最长字串匹配的准确率
+                    # substring_accuracy_dict[size][pin].append(SequenceMatcher(None, input_pin_str, correct_pin).find_longest_match(0, len(input_pin_str), 0, len(correct_pin)).size / len(correct_pin)) # acccuracy
+                    substring_accuracy_dict[size][pin].append(1 - SequenceMatcher(None, input_pin_str, correct_pin).find_longest_match(0, len(input_pin_str), 0, len(correct_pin)).size / len(correct_pin)) # error rate
+                    print(f"date: {date}, user: {user}, size: {size}, pin: {pin}, correct_pin: {correct_pin}, input_pin_str: {input_pin_str}, correct_accuracy: {correct_pin_accuracy_dict[size][pin]}, substring_accuracy: {substring_accuracy_dict[size][pin]}")
+        
+
+        
+        # Convert your accuracy data to a suitable format for plotting
+        data_for_plotting = []
+        for size, pin_dict in correct_pin_accuracy_dict.items():
+            for pin, accuracies_correct in pin_dict.items():
+                for accuracy_correct in accuracies_correct:
+                    data_for_plotting.append({'Size': size - 1, 'PIN': pin, 'Input Error Rate': accuracy_correct*100})
+
+        # Create a DataFrame for easy plotting
+        df = pd.DataFrame(data_for_plotting)
+
+        df.to_excel(os.path.join(os.getcwd(), 'data','VRAuth1', 'error_rate_correct_match.xlsx'), index=False)
+
+        # 完全匹配
+        # 画每个size下每个pin的正确率的箱型图，grouped by pin
+        # Plotting
+        plt.figure(figsize=(12, 6))
+        sns.boxplot(x='PIN', y='Input Error Rate', hue='Size', data=df)
+        plt.title('Box Plot of Correct PIN Accuracy for Each PIN, Grouped by Size')
+        result_folder = self._create_result_folder("study1")
+        plt.savefig(os.path.join(result_folder, "correct_error_rate_size_pin_group_by_pin.png"))
+        plt.close()
+        
+        
+        # 画每个size下每个pin的正确率的箱型图，grouped by size
+        plt.figure(figsize = (12, 6))
+        sns.boxplot(x='Size', y='Input Error Rate', hue='PIN', data=df)
+        plt.title('Box Plot of Correct PIN Accuracy for Each Size, Grouped by PIN')
+        result_folder = self._create_result_folder("study1")
+        plt.savefig(os.path.join(result_folder, "correct_error_rate_size_pin_group_by_size.png"))
+        plt.close()
+                
+        # 画每个size下的正确率的箱型图
+        plt.figure(figsize = (12, 6))
+        sns.boxplot(x='Size', y='Input Error Rate', data=df)
+        plt.title('Box Plot of Correct PIN Accuracy for Each Size')
+        result_folder = self._create_result_folder("study1")
+        plt.savefig(os.path.join(result_folder, "correct_error_rate_size_box.png"))
+        plt.close()
+
+        # 画每个size下平均正确率的条形图
+        plt.figure(figsize = (10, 6))
+        # 使用 viridis 颜色映射生成颜色数组
+        colors = plt.cm.Blues(np.linspace(0.2, 1, len(self.size_list)+3))
+        # 绘制条形图，为每个条形指定颜色
+        ax = sns.barplot(x='Size', y='Input Error Rate', data=df, palette=colors, errorbar='sd', width=0.5, errcolor='grey')
+        # # 设置误差帽
+        # for bar in ax.patches:
+        #     x = bar.get_x() + bar.get_width() / 2
+        #     y = bar.get_height()
+        #     error = df[df['Size'] == bar.get_x()]['Accuracy_correct'].std()  # 计算标准差
+        #     plt.errorbar(x, y, yerr=error, fmt='none', capsize=10, color='black')
+        # 在每个条形的顶端添加平均值标签
+        for p in ax.patches:
+            ax.annotate(f"{p.get_height():.3f}",  # 设置标签格式
+                        (p.get_x() + p.get_width() * 0.75, p.get_height()),  # 设置标签位置
+                        ha = 'center', va = 'center',  # 水平居中、垂直居中
+                        xytext = (0, 9),  # 文本偏移量
+                        textcoords = 'offset points', fontsize = 14)
+        # Remove right and top spines/borders
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+
+        # Add a gray dashed line to the y-axis major ticks on each subplot
+        ax.yaxis.grid(True, linestyle='--', alpha=0.7, color='gray')
+        ax.set_xlabel(f'Size', fontsize=14)
+        ax.set_ylabel('Input Error Rate(%)', fontsize=14)
+        plt.title('Bar Plot of Average Exact Matching Error Rate for Each Size')
+        result_folder = self._create_result_folder("study1")
+        plt.tight_layout()
+        plt.savefig(os.path.join(result_folder, "correct_error_rate_size_bar.png"))
+        plt.close()
+
+         # Convert your accuracy data to a suitable format for plotting
+        data_for_plotting = []
+        for size, pin_dict in substring_accuracy_dict.items():
+            for pin, accuracies_substring in pin_dict.items():
+                for accuracy_substring in accuracies_substring:
+                    data_for_plotting.append({'Size': size - 1, 'PIN': pin, 'Input Error Rate': accuracy_substring*100})
+
+        # Create a DataFrame for easy plotting
+        df = pd.DataFrame(data_for_plotting)
+
+        df.to_excel(os.path.join(os.getcwd(), 'data','VRAuth1', 'error_rate_substring.xlsx'), index=False)
+
+        # 最长子串匹配
+        # 画每个size下每个pin的正确率的箱型图，grouped by pin
+        # Plotting
+        plt.figure(figsize=(12, 6))
+        sns.boxplot(x='PIN', y='Input Error Rate', hue='Size', data=df)
+        plt.title('Box Plot of Substring PIN Accuracy for Each PIN, Grouped by Size')
+        result_folder = self._create_result_folder("study1")
+        plt.savefig(os.path.join(result_folder, "substring_error_rate_size_pin_group_by_pin.png"))
+        plt.close()
+        
+        # 画每个size下每个pin的正确率的箱型图，grouped by size
+        plt.figure(figsize = (12, 6))
+        sns.boxplot(x='Size', y='Input Error Rate', hue='PIN', data=df)
+        plt.title('Box Plot of Substring PIN Accuracy for Each Size, Grouped by PIN')
+        result_folder = self._create_result_folder("study1")
+        plt.savefig(os.path.join(result_folder, "substring_error_rate_size_pin_group_by_size.png"))
+        plt.close()
+                
+        # 画每个size下的正确率的箱型图
+        plt.figure(figsize = (12, 6))
+        sns.boxplot(x='Size', y='Input Error Rate', data=df)
+        plt.title('Box Plot of Substring PIN Accuracy for Each Size')
+        result_folder = self._create_result_folder("study1")
+        plt.savefig(os.path.join(result_folder, "substring_error_rate_size_box.png"))
+        plt.close()
+
+        # 画每个size下平均正确率的条形图
+        plt.figure(figsize = (10, 6))
+        # 绘制条形图，为每个条形指定颜色
+        ax = sns.barplot(x='Size', y='Input Error Rate', data=df, palette=colors, errorbar='se', width=0.5, errcolor='grey')
+        for p in ax.patches:
+            ax.annotate(f"{p.get_height():.3f}",  # 设置标签格式
+                        (p.get_x() + p.get_width() * 0.75, p.get_height()),  # 设置标签位置
+                        ha = 'center', va = 'center',  # 水平居中、垂直居中
+                        xytext = (0, 9),  # 文本偏移量
+                        textcoords = 'offset points', fontsize = 14)
+        # Remove right and top spines/borders
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+
+        # Add a gray dashed line to the y-axis major ticks on each subplot
+        ax.yaxis.grid(True, linestyle='--', alpha=0.7, color='gray')
+        ax.set_xlabel(f'Size', fontsize=14)
+        ax.set_ylabel('Input Error Rate(%)', fontsize=14)
+        plt.title('Bar Plot of Average Pattern Matching Error Rate for Each Size') 
+        result_folder = self._create_result_folder("study1")
+        plt.tight_layout()
+        plt.savefig(os.path.join(result_folder, "substring_error_rate_size_bar.png"))
+        plt.close()
+
+
+                        # for i, (eye_angle, head_angle) in enumerate(zip(eye_angles, head_angles)):
+                        #     # Eye data path
+                        #     eye_filename = f"GazeCalculate_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
+                        #     eye_file_path = os.path.join(rotdir, f"VRAuthStudy1Angle-{member.split('-')[2]}/P{user}/{eye_filename}")
+
+                        #     # Head data path
+                        #     head_filename = f"Head_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
+                        #     head_file_path = os.path.join(rotdir, f"VRAuthStudy1Angle-{member.split('-')[2]}/P{user}/{head_filename}")
+
+                        #     # Load eye and head data
+                        #     eye_data = pd.read_csv(eye_file_path)[eye_angle]
+                        #     head_data = pd.read_csv(head_file_path)[head_angle]
+
+                        #     # Preprocess and adjust the angles if necessary
+                        #     eye_data_adjusted = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in eye_data]
+                        #     head_data_adjusted = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in head_data]
+
+                        #     # Plotting each angle on the same subplot
+                        #     ax = axes[i]
+                        #     if preprocess_func:
+                        #         ax.plot(preprocess_func(eye_data_adjusted), label=f"{eye_angle} (Eye)")
+                        #         ax.plot(preprocess_func(head_data_adjusted), label=f"{head_angle} (Head)")
+                        #     else:
+                        #         ax.plot(eye_data_adjusted, label=f"{eye_angle} (Eye)")
+                        #         ax.plot(head_data_adjusted, label=f"{head_angle} (Head)")
+
+                        #     # Add vertical lines for each range
+                        #     for start, end in ranges:
+                        #         ax.axvline(x=start, color='r', linestyle='--')
+                        #         ax.axvline(x=end, color='r', linestyle='--')
+                        #         ax.axvspan(start, end, color='grey', alpha=0.3)
+
+                        #     ax.legend()
+                        #     ax.set_title(f"Euler Angle for User {user}, Date {member.split('-')[2]}, Size {size}, Pin {pin}, Auth number {num+1}")
+                        #     ax.set_xlabel("Time")
+                        #     ax.set_ylabel("Angle")
+
+                        # # Define and create the plot folder
+                        # plot_folder = os.path.join("result/", "timeseries_plots", f"{member.split('-')[0]}", "combined")
+                        # if not os.path.exists(plot_folder):
+                        #     os.makedirs(plot_folder)
+
+                        # # Define the plot filename
+                        # plot_filename = f"Combined_Eye_Head_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1}_Angle_horizontal.png"
+                        # fig.savefig(os.path.join(plot_folder, plot_filename))
+                        # plt.close(fig)
 
     def head_and_eye_quaternion_drawer(self, rotdir=None, eye_preprocess_func=None, head_preprocess_func=None, file_suffix = None):
         # Define angles for left eye and head
@@ -1141,6 +1593,28 @@ class Drawer: # 画json里的数据的图
                         plot_filename = f"Combined_Eye_Head_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1}_Quaternion.png"
                         fig.savefig(os.path.join(plot_folder, plot_filename))
                         plt.close(fig)
+    
+    def time_per_size_rmanova(self, times_for_size_user):
+        from statsmodels.stats.anova import AnovaRM
+        # 创建一个空的DataFrame
+        df = pd.DataFrame(columns=['User', 'Size', 'Pin', 'Time'])
+
+        # 假设times_for_size是您的数据
+        # 遍历每个尺寸
+        for size, users_pin_times in times_for_size_user.items():
+            # 遍历每个用户
+            for user, pin_times in users_pin_times.items():
+                # 遍历每个用户的每次时间
+                for pin, times in pin_times:
+                    for time in times:
+                        # 为每个用户的每次尝试添加一行
+                        df = df._append({'User': user, 'Size': size, 'Pin': pin, 'Time': time}, ignore_index=True)
+        # 执行RMANOVA
+        aovrm = AnovaRM(df, 'time', ['user', 'pin'], within=['size'])
+        res = aovrm.fit()
+
+        # 打印结果
+        print(res.summary())
 
 
     def _create_result_folder(self, folder_name):
@@ -1156,12 +1630,24 @@ class Drawer: # 画json里的数据的图
             print("Times Calculated.")
 
         if 'plot_time_per_size' in options:
+            average_times = self.calculate_times()
             self.plot_time_per_size(average_times)
             print("Plotted Time per Size.")
 
-        if 'plot_time_per_size_pin' in options:
-            self.plot_time_per_size_pin(average_times)
+        if 'plot_time_per_pin_group_by_size' in options:
+            average_times, _, _ = self.calculate_times()
+            self.plot_time_per_pin_group_by_size(average_times)
             print("Plotted Time per Size and Pin.")
+
+        if 'plot_time_per_size_group_by_pin' in options:
+            average_times, _, _ = self.calculate_times()
+            self.plot_time_per_size_group_by_pin(average_times)
+            print("Plotted Time per Size and Pin.")
+
+        if 'box_plot_time_per_size' in options:
+            _, time_for_size, _ = self.calculate_times()
+            self.plot_time_per_size_boxplot(time_for_size)
+            print("Box Plot plotted Time per Size.")
 
         if 'eye_user_size_pin_num_drawer' in options:
             self.eye_user_size_pin_num_drawer(rotdir=self.rotdir)
@@ -1182,8 +1668,27 @@ class Drawer: # 画json里的数据的图
         if 'head_and_smoothed_eye_quaternion_drawer' in options:
             self.head_and_smoothed_eye_quaternion_drawer(rotdir=self.rotdir)
             print("Head and Smoothed Eye Quaternion Data Plotted.")
+        
+        if 'time_per_size_rmanova' in options:
+            _, _, times_for_size_user_pin= self.calculate_times()
+            self.time_per_size_rmanova(times_for_size_user_pin)
+            print("Time per Size RMANOVA Plotted.")
+
+        if 'pin_error_rate' in options:
+            self.pin_error_rate(rotdir=self.rotdir)
+            print("Pin Error Rate Plotted.")
 
 # rotdir是文件夹“VRAuthStudy1-1228”等存放的目录，可以是绝对目录，也可以从cwd向下获得
 # Example of how to use the class with different options
-drawer = Drawer(filepath="src/data_study1.json", size_list=[3], pin_list=range(13,19), rotdir = os.path.join(os.getcwd(), 'data'), default_authentications_per_person=7) # todo: 从json里读取num_range
-drawer.run(options=["head_and_eye_quaternion_drawer"])
+drawer = Drawer(filepath="src/data_condition_error_rate.json", size_list=[3], pin_list=range(1,19), rotdir = os.path.join(os.getcwd(), 'data'), default_authentications_per_person=10) # todo: 从json里读取num_range
+# drawer.run(options=['plot_time_per_size'])
+# drawer.run(options=['plot_time_per_size_group_by_pin'])
+# drawer.run(options=['plot_time_per_pin_group_by_size'])
+# drawer.run(options=['box_plot_time_per_size'])
+# drawer.run(options=['time_per_size_rmanova'])
+# drawer.run(options=['head_and_eye_drawer'])
+with open('error_rate_output_study1_used.txt', 'w') as file:
+    original_stdout = sys.stdout
+    sys.stdout = file
+    drawer.run(options=['pin_error_rate'])  
+    sys.stdout = original_stdout
