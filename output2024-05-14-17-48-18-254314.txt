@@ -1,0 +1,25 @@
+************ positive_label: ['4'] ************ 
+model:head+eye, augmentation_time: 10
+studytype_users_dates_range: ['study2_4_0117_1-10', 'study2_5_0117_1-10', 'study2_6_0117_1-10', 'study2_8_0117_1-10', 'study2_9_0118_1-10', 'study2_10_0118_1-10', 'study2_12_0118_1-10', 'study2_14_0118_1-5', 'study2_15_0118_1-5', 'study2_16_0119_1-5', 'study2_17_0119_1-5', 'study2_18_0119_1-5', 'study2_19_0119_1-5', 'study2_20_0119_1-5', 'study2_21_0119_1-5', 'study2_22_0119_1-5', 'study2_23_0119_1-5']
+n_split: 4, noise_level: 0.3
+segmantation num: 4
+----------------pin_list: [1]----------------
+smoothed
+data_scaled:(1180, 1770)
+data_scaled_lstm:(0,)
+
+using 15 time series signals per test and their FT features
+
+----------rf_binary_kfold------------
+Class 0: 1080 samples
+Class 1: 100 samples
+Average Accuracy: 0.9771186440677967 
+Precision: 0.9777253019879834 
+Recalls: 0.9771186440677967 
+F1 Scores: 0.9752595317080222
+----------rf_multi_kfold------------
+Average Accuracy: 0.9940677966101695 
+precision: 0.9946033172728088 
+recalls: 0.9940677966101695 
+f1s: 0.9939220984691084
+程序运行时间：301.62757420539856秒

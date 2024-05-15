@@ -644,3 +644,55 @@ def rf_multi_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None)
 
     print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
           "\nf1s:", average_f1s)
+
+################################################################ rf 二分类
+def rf_binary_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None):
+    # 打印各类别的样本数量
+    for label in np.unique(labels):
+        count = np.sum(labels == label)
+        print(f"Class {label}: {count} samples")
+
+    # 设置交叉验证的折叠数
+    kf = StratifiedKFold(n_splits=n_splits, shuffle=True)
+
+    # 初始化准确性列表，用于存储每个折叠的模型准确性
+    accuracies = []
+    precisions = []
+    recalls = []
+    f1s = []
+
+    # 进行交叉验证
+    for train_index, test_index in kf.split(data_scaled, labels):
+        X_train, X_test = data_scaled[train_index], data_scaled[test_index]
+        y_train, y_test = labels[train_index], labels[test_index]
+
+        # 数据的标准化做在train set上
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+
+        # 创建随机森林模型
+        rf_model = RandomForestClassifier(n_estimators=n_estimators)
+
+        # 模型训练
+        rf_model.fit(X_train, y_train)
+
+        # 模型预测
+        y_pred = rf_model.predict(X_test)
+
+        # 计算准确性
+        accuracy = accuracy_score(y_test, y_pred)
+        accuracies.append(accuracy)
+
+        precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted', zero_division=1)
+        precisions.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+
+    # 计算平均指标
+    average_accuracy = np.mean(accuracies)
+    average_precision = np.mean(precisions)
+    average_recalls = np.mean(recalls)
+    average_f1s = np.mean(f1s)
+
+    print("Average Accuracy:", average_accuracy, "\nPrecision:", average_precision, "\nRecalls:", average_recalls, "\nF1 Scores:", average_f1s)

@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.signal as signal
 from scipy.signal import savgol_filter
 from cycler import cycler
 import os
@@ -1774,6 +1775,175 @@ class Drawer: # 画json里的数据的图
         # 打印结果
         print(res.summary())
 
+    def head_and_eye_spectrogram_drawer(self, rotdir=None, preprocess_func=None):
+            # Define angles for left eye and head
+            eye_angles = ['L-QuaternionX', 'L-QuaternionY', 'L-QuaternionZ', 'L-QuaternionW']
+            head_angles = ['H-QuaternionX', 'H-QuaternionY', 'H-QuaternionZ', 'H-QuaternionW']
+
+            # Loop to process and plot data
+            for member in self.studytype_users_dates:
+                user = member.split('-')[1]  # Adjust according to how user is identified in your data
+                for size in self.size_list:
+                    for pin in self.pin_list:
+                        for num in range(self.default_authentications_per_person):
+                            # Create a figure with subplots for each angle comparison
+                            fig, axes = plt.subplots(4, 1, figsize=(10, 18))
+
+                            # Determine the path for the specific text file
+                            text_filename = f"Saccades_{member}-{size}-{pin}-{num+1}.txt"
+                            text_file_path = os.path.join(rotdir, f"VRAuth2/P{user}/{text_filename}")
+                            # Read and parse text data from the file
+                            try:
+                                with open(text_file_path, 'r') as file:
+                                    text_data = file.read().strip()
+                                    # Parse the ranges from the text data
+                                    ranges = [list(map(int, r.split('-'))) for r in text_data.split(';') if r]
+                            except FileNotFoundError:
+                                ranges = []  # No ranges to add if file is not found
+
+
+                            for i, (eye_angle, head_angle) in enumerate(zip(eye_angles, head_angles)):
+                                # Eye data path
+                                eye_filename = f"GazeCalculate_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
+                                eye_file_path = os.path.join(rotdir, f"VRAuth2/P{user}/{eye_filename}")
+
+                                # Head data path
+                                head_filename = f"Head_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
+                                head_file_path = os.path.join(rotdir, f"VRAuth2/P{user}/{head_filename}")
+
+                                # Load eye and head data
+                                eye_data = pd.read_csv(eye_file_path)[eye_angle]
+                                head_data = pd.read_csv(head_file_path)[head_angle]
+
+                                # Preprocess and adjust the angles if necessary
+                                eye_data_adjusted = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in eye_data]
+                                head_data_adjusted = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in head_data]
+
+
+                                # smooth on hold temporary for 2024.04.29
+                                # smooth eye data
+                                eye_data_adjusted_smoothed = eye_data_adjusted
+                                # modified 2024.04.29 original: smooth_data(eye_data_adjusted)
+
+                                eye_data_adjusted_smoothed = np.array(eye_data_adjusted_smoothed)
+                                head_data_adjusted = np.array(head_data_adjusted)
+
+                                # Plotting each angle on the same subplot
+                                ax = axes[i]
+                                if preprocess_func:
+                                    ax.plot(preprocess_func(eye_data_adjusted_smoothed), label=f"{eye_angle} (Eye)")
+                                    ax.plot(preprocess_func(head_data_adjusted), label=f"{head_angle} (Head)")
+                                else:
+                                    f1, t1, Sxx1 = signal.spectrogram(eye_data_adjusted_smoothed, fs=1, nperseg=8)
+                                    # f2, t2, Sxx2 = signal.spectrogram(head_data_adjusted, fs=1, nperseg=8)
+                                    ax.pcolormesh(t1, f1, 10 * np.log10(Sxx1+ np.finfo(float).eps), cmap="jet", shading='auto')
+                                    # ax.pcolormesh(t2, f2, 10 * np.log10(Sxx2+ np.finfo(float).eps), cmap="jet", shading='auto')
+                                    # ax.plot(eye_data_adjusted, label=f"{eye_angle} (Eye)")
+                                    # ax.plot(head_data_adjusted, label=f"{head_angle} (Head)")
+
+                                # Add vertical lines for each range
+                                for start, end in ranges:
+                                    ax.axvline(x=start, color='r', linestyle='--')
+                                    ax.axvline(x=end, color='r', linestyle='--')
+                                    ax.axvspan(start, end, color='grey', alpha=0.3)
+
+                                ax.legend()
+                                # ax.set_title(f"User {user}, Date {member.split('-')[2]}, Size {size}, Pin {pin}, Auth number {num+1}")
+                                ax.set_xlabel("Time")
+                                ax.set_ylabel("Frequency")
+
+                            fig.suptitle(f"User {user}, Date {member.split('-')[2]}, Size {size}, Pin {pin}, Auth number {num+1} \n " + "eye: ['L-QuaternionX', 'Y', 'Z', 'W']")
+                            # Define and create the plot folder
+                            plot_folder = os.path.join("result/", "timeseries_plots", f"{member.split('-')[0]}", "spectrogram")
+                            if not os.path.exists(plot_folder):
+                                os.makedirs(plot_folder)
+
+                            # Define the plot filename
+                            plot_filename = f"Spectrogram_Eye_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1}.png"
+                            fig.savefig(os.path.join(plot_folder, plot_filename))
+                            plt.close(fig)
+
+    def head_and_eye_FT_drawer(self, rotdir=None, preprocess_func=None):
+            fs=50
+            def centered_magnitude_spectrum(sig):
+                return np.fft.fftshift(abs(np.fft.fft(sig)))
+            # Define angles for left eye and head
+            eye_angles = ['L-QuaternionX', 'L-QuaternionY', 'L-QuaternionZ', 'L-QuaternionW']
+            head_angles = ['H-QuaternionX', 'H-QuaternionY', 'H-QuaternionZ', 'H-QuaternionW']
+
+            # Loop to process and plot data
+            for member in self.studytype_users_dates:
+                user = member.split('-')[1]  # Adjust according to how user is identified in your data
+                for size in self.size_list:
+                    for pin in self.pin_list:
+                        for num in range(self.default_authentications_per_person):
+                            # Create a figure with subplots for each angle comparison
+                            fig, axes = plt.subplots(4, 1, figsize=(10, 18))
+
+                            # Determine the path for the specific text file
+                            text_filename = f"Saccades_{member}-{size}-{pin}-{num+1}.txt"
+                            text_file_path = os.path.join(rotdir, f"VRAuth2/P{user}/{text_filename}")
+                            # Read and parse text data from the file
+                            try:
+                                with open(text_file_path, 'r') as file:
+                                    text_data = file.read().strip()
+                                    # Parse the ranges from the text data
+                                    ranges = [list(map(int, r.split('-'))) for r in text_data.split(';') if r]
+                            except FileNotFoundError:
+                                ranges = []  # No ranges to add if file is not found
+
+
+                            for i, (eye_angle, head_angle) in enumerate(zip(eye_angles, head_angles)):
+                                # Eye data path
+                                eye_filename = f"GazeCalculate_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
+                                eye_file_path = os.path.join(rotdir, f"VRAuth2/P{user}/{eye_filename}")
+
+                                # Head data path
+                                head_filename = f"Head_data_{member.split('-')[0]}-{user}-{member.split('-')[2]}-{str(size)}-{str(pin)}-{str(num+1)}.csv"
+                                head_file_path = os.path.join(rotdir, f"VRAuth2/P{user}/{head_filename}")
+
+                                # Load eye and head data
+                                eye_data = pd.read_csv(eye_file_path)[eye_angle]
+                                head_data = pd.read_csv(head_file_path)[head_angle]
+
+                                # Preprocess and adjust the angles if necessary
+                                eye_data_adjusted = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in eye_data]
+                                head_data_adjusted = [x if abs(x) < 180 else (x - 360 if x > 180 else x + 360) for x in head_data]
+
+
+                                # smooth on hold temporary for 2024.04.29
+                                # smooth eye data
+                                eye_data_adjusted_smoothed = eye_data_adjusted
+                                # modified 2024.04.29 original: smooth_data(eye_data_adjusted)
+
+                                eye_data_adjusted_smoothed = np.array(eye_data_adjusted_smoothed)
+                                head_data_adjusted = np.array(head_data_adjusted)
+
+                                # Plotting each angle on the same subplot
+                                ax = axes[i]
+                                if preprocess_func:
+                                    ax.plot(preprocess_func(eye_data_adjusted_smoothed), label=f"{eye_angle} (Eye)")
+                                    ax.plot(preprocess_func(head_data_adjusted), label=f"{head_angle} (Head)")
+                                else:
+                                    freq1 = centered_magnitude_spectrum(eye_data_adjusted_smoothed)
+                                    freq2 = centered_magnitude_spectrum(head_data_adjusted)
+                                    ax.plot(np.linspace(-fs/2, fs/2, len(freq1)), freq1, label=f"{eye_angle} (Eye)")
+
+                                ax.legend()
+                                # ax.set_title(f"User {user}, Date {member.split('-')[2]}, Size {size}, Pin {pin}, Auth number {num+1}")
+                                ax.set_ylabel("Magnitude")
+                                ax.set_xlabel("Frequency")
+
+                            fig.suptitle(f"DFT of User {user}, Date {member.split('-')[2]}, Size {size}, Pin {pin}, Auth number {num+1} \n " + "eye: ['L-QuaternionX', 'Y', 'Z', 'W']")
+                            # Define and create the plot folder
+                            plot_folder = os.path.join("result/", "timeseries_plots", f"{member.split('-')[0]}", "FTplot")
+                            if not os.path.exists(plot_folder):
+                                os.makedirs(plot_folder)
+
+                            # Define the plot filename
+                            plot_filename = f"FTplot_Eye_User{user}_Date{member.split('-')[2]}_Size{size}_Pin{pin}_Num{num+1}.png"
+                            fig.savefig(os.path.join(plot_folder, plot_filename))
+                            plt.close(fig)
 
     def _create_result_folder(self, folder_name):
         result_dir = os.path.join(os.getcwd(), "result", folder_name)
@@ -1836,17 +2006,25 @@ class Drawer: # 画json里的数据的图
             self.pin_error_rate(rotdir=self.rotdir)
             print("Pin Error Rate Plotted.")
 
+        if 'head_and_eye_spectrogram_drawer' in options:
+            self.head_and_eye_spectrogram_drawer(rotdir=self.rotdir)
+            print("Head and Eye Spectrogram Data Plotted.")
+
+        if 'head_and_eye_FT_drawer' in options:
+            self.head_and_eye_FT_drawer(rotdir=self.rotdir)
+            print("Head and Eye FT Data Plotted.")
+
 # rotdir是文件夹“VRAuthStudy1-1228”等存放的目录，可以是绝对目录，也可以从cwd向下获得
 # Example of how to use the class with different options
-drawer = Drawer(filepath="src/data_condition.json", size_list=[3,], pin_list=range(2,3), rotdir = os.path.join(os.getcwd(), 'data'), default_authentications_per_person=10) # todo: 从json里读取num_range
+drawer = Drawer(filepath="src/data_for_plot.json", size_list=[3,], pin_list=range(2,3), rotdir = os.path.join(os.getcwd(), 'data'), default_authentications_per_person=10) # todo: 从json里读取num_range
 # drawer.run(options=['plot_time_per_size'])
 # drawer.run(options=['plot_time_per_size_group_by_pin'])
 # drawer.run(options=['plot_time_per_pin_group_by_size'])
 # drawer.run(options=['box_plot_time_per_size'])
 # drawer.run(options=['time_per_size_rmanova'])
 # drawer.run(options=['head_and_eye_drawer'])
-with open('sitting_error_rate_pin2.txt', 'w') as file:
+with open('FTplot_log.txt', 'w') as file:
     original_stdout = sys.stdout
     sys.stdout = file
-    drawer.run(options=['pin_error_rate'])  
+    drawer.run(options=['head_and_eye_FT_drawer'])  
     sys.stdout = original_stdout

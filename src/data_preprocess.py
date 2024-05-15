@@ -8,6 +8,10 @@ import os
 import json
 import itertools
 import warnings
+from scipy.signal import butter, filtfilt
+from scipy.interpolate import interp1d
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
 
 def read_data_latter_data_json(filepath="D:\pycharm\srt_vr_auth\src\data.json"):
@@ -64,7 +68,15 @@ def smooth_data(arr, window_parameter=9, polyorder_parameter=2):  # 平滑数据
 
 
 # 1231update ranges为fixation的一个list
-def extract_features(sequence, slice_num=4, ranges=None):  # 把序列切成十段，每段取均值、最大值、最小值、方差，共40个特征，返回一个拼接的一维数组
+def extract_features(sequence, slice_num=4, ranges=None):
+    '''
+    Output:
+        ((切段数量 * 特征数量) x 1)的 numpy array: 特征包括设定的统计学特征和其一阶导数
+        [特征1-段1, 特征1-段2, ..., 特征1-段n, 特征2-段1, 特征2-段2, ..., 特征1导数-段1, 特征1导数-段2, ..., 特征1导数-段n, ...]
+
+        若想要lstm输入, 需要reshape成(切段数量, 特征数量), 可以执行如下操作;
+        result = np.reshape(result, (-1, len(ranges)-1)).T
+    '''
     # 如果range不空，则按照range中的start和end切分，saccades占slice_num - n段，fixation占n段
     range_fixation = []
     range_sacaades = []
@@ -120,6 +132,8 @@ def extract_features(sequence, slice_num=4, ranges=None):  # 把序列切成十�
     seq_initial = get_n_derivation_features(sequence, ranges)
     # 1阶导
     seq_second = get_n_derivation_features(np.diff(sequence), ranges)
+    # fourier every segment
+    # seq_fourier = get_n_derivation_features(np.fft.fft(sequence), ranges)
 
 
     # seq_all = np.concatenate([seq_initial, seq_second])
@@ -129,6 +143,16 @@ def extract_features(sequence, slice_num=4, ranges=None):  # 把序列切成十�
 
 # update1.1 获得n阶导的统计学特征向量
 def get_n_derivation_features(sequence, ranges):
+    '''
+    Output: 
+        ((切段数量 * 特征数量) x 1)的 numpy array:
+        [特征1-段1, 特征1-段2, ..., 特征1-段n, 特征2-段1, 特征2-段2, ..., 特征2-段n, ...]
+
+        若想要lstm输入, 需要reshape成(切段数量, 特征数量), 可以执行如下操作;
+        result = np.reshape(result, (-1, len(ranges) -1)).T 或len(ranges)?
+        得到(特征数量, 切段数量)的numpy array
+        [[段1-特征1, 段2-特征1, ..., 段n-特征1], [段2-特征1, 段2-特征2, ..., 段n-特征2], ...]
+    '''
     # 初始化特征数组
     features = []
     features_mean = []  # 均值
@@ -186,11 +210,11 @@ def get_n_derivation_features(sequence, ranges):
         features_wamp.append(wamp)  # zero
         features_ssc.append(ssc)  # low
 
-    # return np.concatenate([features_mean, features_max, features_min, features_var, features_median,
-    #                        features_rms, features_std, features_mad, features_iqr,
-    #                         features_mc, features_wamp, features_ssc,  features_kurtosis, features_skewness])
+    return np.concatenate([features_mean, features_max, features_min, features_var, features_median,
+                           features_rms, features_std, features_mad, features_iqr,
+                            features_mc, features_wamp, features_ssc,  features_kurtosis, features_skewness])
 
-    return np.concatenate([features_mean, features_max, features_min, features_var, features_median])
+    # return np.concatenate([features_mean, features_max, features_min, features_var, features_median])
 
 
 def difference_gaze_lr_euler_angle(user, date, num):  # 读取用户特定日期和序号的视线数据，以3个list分别返回左右视线Yaw, Pitch, Roll角度的差异, num从1开始
@@ -381,11 +405,21 @@ def head_eye_slice_quaternion_read(head_data_dir=None, eye_data_dir=None, segmen
 # 1231update segment_data_dir为切断的文件路径
 def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
                                noise_flag=False, noise_level=0.1):
+    '''
+    Output:
+        每个元祖的元素都是extract_features的输出:
+        ((切段数量 * 特征数量) x 1)的 numpy array: 特征包括设定的统计学特征和其一阶导数
+        [特征1-段1, 特征1-段2, ..., 特征1-段n, 特征2-段1, 特征2-段2, ..., 特征1导数-段1, 特征1导数-段2, ..., 特征1导数-段n, ...]
+
+        若想要lstm输入, 需要reshape成(切段数量, 特征数量), 可以执行如下操作;
+        result = np.reshape(result, (-1, len(ranges)-1)).T
+    '''
     # 头的四元组
     QuaternionX_data = data_head['H-QuaternionX']
     if noise_flag:
         QuaternionX_data = add_noise(QuaternionX_data, noise_level)
     QuaternionX_data = QuaternionX_data - np.mean(QuaternionX_data[0:5])
+    d1_0 = np.array(QuaternionX_data)
     QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
     d1 = np.array(QuaternionX_data_smoothed)
     d1_feat = extract_features(d1, ranges=ranges)
@@ -393,6 +427,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionY_data = add_noise(QuaternionY_data, noise_level)
     QuaternionY_data = QuaternionY_data - np.mean(QuaternionY_data[0:5])
+    d2_0 = np.array(QuaternionY_data)
     QuaternionY_data_smoothed = smooth_data(QuaternionY_data)
     d2 = np.array(QuaternionY_data_smoothed)
     d2_feat = extract_features(d2, ranges=ranges)
@@ -400,6 +435,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionZ_data = add_noise(QuaternionZ_data, noise_level)
     QuaternionZ_data = QuaternionZ_data - np.mean(QuaternionZ_data[0:5])
+    d3_0 = np.array(QuaternionZ_data)
     QuaternionZ_data_smoothed = smooth_data(QuaternionZ_data)
     d3 = np.array(QuaternionZ_data_smoothed)
     d3_feat = extract_features(d3, ranges=ranges)
@@ -407,6 +443,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionW_data = add_noise(QuaternionW_data, noise_level)
     QuaternionW_data = QuaternionW_data - np.mean(QuaternionW_data[0:5])
+    d4_0 = np.array(QuaternionW_data)
     QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
     d4 = np.array(QuaternionW_data_smoothed)
     d4_feat = extract_features(d4, ranges=ranges)
@@ -415,6 +452,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         Vector3X_data = add_noise(Vector3X_data, noise_level)
     Vector3X_data = Vector3X_data - np.mean(Vector3X_data[0:5])
+    v1_0 = np.array(Vector3X_data)
     Vector3X_data_smoothed = smooth_data(Vector3X_data)
     v1 = np.array(Vector3X_data_smoothed)
     v1_feat = extract_features(v1, ranges=ranges)
@@ -422,6 +460,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         Vector3Y_data = add_noise(Vector3Y_data, noise_level)
     Vector3Y_data = Vector3Y_data - np.mean(Vector3Y_data[0:5])
+    v2_0 = np.array(Vector3Y_data)
     Vector3Y_data_smoothed = smooth_data(Vector3Y_data)
     v2 = np.array(Vector3Y_data_smoothed)
     v2_feat = extract_features(v2, ranges=ranges)
@@ -429,6 +468,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         Vector3Z_data = add_noise(Vector3Z_data, noise_level)
     Vector3Z_data = Vector3Z_data - np.mean(Vector3Z_data[0:5])
+    v3_0 = np.array(Vector3Z_data)
     Vector3Z_data_smoothed = smooth_data(Vector3Z_data)
     v3 = np.array(Vector3Z_data_smoothed)
     v3_feat = extract_features(v3, ranges=ranges)
@@ -438,6 +478,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionX_data = add_noise(QuaternionX_data, noise_level)
     QuaternionX_data = QuaternionX_data - np.mean(QuaternionX_data[0:5])
+    d1_el_0 = np.array(QuaternionX_data)
     QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
     d1_el = np.array(QuaternionX_data_smoothed)
     d1_el_feat = extract_features(d1_el, ranges=ranges)
@@ -445,6 +486,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionY_data = add_noise(QuaternionY_data, noise_level)
     QuaternionY_data = QuaternionY_data - np.mean(QuaternionY_data[0:5])
+    d2_el_0 = np.array(QuaternionY_data)
     QuaternionY_data_smoothed = smooth_data(QuaternionY_data)
     d2_el = np.array(QuaternionY_data_smoothed)
     d2_el_feat = extract_features(d2_el, ranges=ranges)
@@ -452,6 +494,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionZ_data = add_noise(QuaternionZ_data, noise_level)
     QuaternionZ_data = QuaternionZ_data - np.mean(QuaternionZ_data[0:5])
+    d3_el_0 = np.array(QuaternionZ_data)
     QuaternionZ_data_smoothed = smooth_data(QuaternionZ_data)
     d3_el = np.array(QuaternionZ_data_smoothed)
     d3_el_feat = extract_features(d3_el, ranges=ranges)
@@ -459,6 +502,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionW_data = add_noise(QuaternionW_data, noise_level)
     QuaternionW_data = QuaternionW_data - np.mean(QuaternionW_data[0:5])
+    d4_el_0 = np.array(QuaternionW_data)
     QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
     d4_el = np.array(QuaternionW_data_smoothed)
     d4_el_feat = extract_features(d4_el, ranges=ranges)
@@ -467,6 +511,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionX_data = add_noise(QuaternionX_data, noise_level)
     QuaternionX_data = QuaternionX_data - np.mean(QuaternionX_data[0:5])
+    d1_er_0 = np.array(QuaternionX_data)
     QuaternionX_data_smoothed = smooth_data(QuaternionX_data)
     d1_er = np.array(QuaternionX_data_smoothed)
     d1_er_feat = extract_features(d1_er, ranges=ranges)
@@ -474,6 +519,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionY_data = add_noise(QuaternionY_data, noise_level)
     QuaternionY_data = QuaternionY_data - np.mean(QuaternionY_data[0:5])
+    d2_er_0 = np.array(QuaternionY_data)
     QuaternionY_data_smoothed = smooth_data(QuaternionY_data)
     d2_er = np.array(QuaternionY_data_smoothed)
     d2_er_feat = extract_features(d2_er, ranges=ranges)
@@ -481,6 +527,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionZ_data = add_noise(QuaternionZ_data, noise_level)
     QuaternionZ_data = QuaternionZ_data - np.mean(QuaternionZ_data[0:5])
+    d3_er_0 = np.array(QuaternionZ_data)
     QuaternionZ_data_smoothed = smooth_data(QuaternionZ_data)
     d3_er = np.array(QuaternionZ_data_smoothed)
     d3_er_feat = extract_features(d3_er, ranges=ranges)
@@ -488,12 +535,14 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     if noise_flag:
         QuaternionW_data = add_noise(QuaternionW_data, noise_level)
     QuaternionW_data = QuaternionW_data - np.mean(QuaternionW_data[0:5])
+    d4_er_0 = np.array(QuaternionW_data)
     QuaternionW_data_smoothed = smooth_data(QuaternionW_data)
     d4_er = np.array(QuaternionW_data_smoothed)
     d4_er_feat = extract_features(d4_er, ranges=ranges)
 
     return d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, \
-        d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat
+        d2_el, d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, d4_er_feat, \
+        d1_0, d2_0, d3_0, d4_0, v1_0, v2_0, v3_0, d1_el_0, d2_el_0, d3_el_0, d4_el_0, d1_er_0, d2_er_0, d3_er_0, d4_er_0 # index 0 is the original data
 
 
 
@@ -571,17 +620,177 @@ def feature_process_angle(eye_data_dir=None, head_data_dir=None, noise_flag=Fals
     return d1, d1_feat, d2, d2_feat, d3, d3_feat, d1_el, d1_el_feat, \
         d2_el, d2_el_feat, d3_el, d3_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat
 
+# def sinc_interp_windowed(x, N = 300, window = np.hanning):
+#     L = len(x)  # 采样点数
+#     T = N / L
+#     n = np.arange(N)
+#     k = np.arange(L)
+#     y = np.zeros(N)
+#     # 创建窗函数
+#     windowed_sinc = lambda t: np.sinc(t) * window(len(t))
+    
+#     # 对每个目标位置应用窗口化的sinc插值
+#     for i in range(N):
+#         indices = n[i]/T - k
+#         y[i] = np.sum(x * windowed_sinc(indices))
+#     return y
+
+def sinc_interp_windowed(x, N=300, window_func=np.hanning):
+    L = len(x)
+    T = N / L
+    n = np.arange(N)
+    k = np.arange(L)
+
+    # 计算sinc函数矩阵并应用窗函数
+    sinc_mat = np.sinc((n[:, None]/T - k[None, :]))
+    window = window_func(L)  # 窗函数应用于原始数据长度
+
+    # window = window_func = np.kaiser(len(x), 5.0)  # 生成Kaiser窗口
+    
+    sinc_mat *= window[np.newaxis, :]  # 在sinc矩阵中应用窗函数
+
+    # 矩阵乘法完成插值
+    y = np.dot(sinc_mat, x)
+    return y
+
+# def sinc_interp(x, N = 300):
+#     L = len(x)  # 采样点数
+#     T = N / L  # 计算插值因子
+#     n = np.arange(N)  # 目标点
+#     k = np.arange(L)  # 原始点
+#     y = np.zeros(N)
+    
+#     # 对每个目标位置应用sinc插值
+#     for i in range(N):
+#         y[i] = np.sum(x * np.sinc((n[i]/T - k)))
+#     return y
+
+# def sinc_interp(x, N=300):
+#     L = len(x)  # 采样点数
+#     T = N / L   # 计算插值因子
+#     n = np.arange(N)  # 目标点
+#     k = np.arange(L)  # 原始点
+
+#     # 计算所有n和k的组合的sinc参数
+#     sinc_matrix = np.sinc((n[:, None]/T - k[None, :]))
+
+#     # 通过矩阵乘法计算结果
+#     y = np.dot(sinc_matrix, x)
+#     return y
+
+def sinc_interp(x, N=300, beta=14):
+    L = len(x)
+    T = N / L
+    n = np.arange(N)
+    k = np.arange(L)
+    # 使用Kaiser窗
+    kaiser_window = np.kaiser(L, beta)
+
+    # 对信号进行填充
+    pad_width = L // 2  # 填充宽度
+    x_padded = np.pad(x, pad_width, mode='reflect')
+
+    # 更新参数以考虑填充
+    k_padded = np.arange(len(x_padded))
+    sinc_mat = np.sinc((n[:, None]/T - k_padded[None, :]))
+    sinc_mat *= kaiser_window[np.newaxis, :]  # 应用窗函数
+
+    # 插值计算
+    y = np.dot(sinc_mat, x_padded)
+    return y
+
+def spline_interp(y_data, target_length=300, kind='cubic'):
+    """
+    对原始数据进行样条插值，输出指定长度的数据。
+    
+    参数:
+    x_data: 原始数据的x坐标数组。
+    y_data: 原始数据的y坐标数组。
+    target_length: 插值后的目标长度。
+    kind: 插值类型，默认为'cubic'。
+
+    返回:
+    y_new: 插值后的y坐标数组。
+    """
+    x_data = np.arange(len(y_data))
+    x_new = np.linspace(x_data.min(), x_data.max(), num=target_length)
+    spline = interp1d(x_data, y_data, kind=kind)
+    y_new = spline(x_new)
+    return y_new
+
+def low_pass_filter(x, cutoff_freq, fs):
+    nyq = 0.5 * fs  # Nyquist频率
+    normal_cutoff = cutoff_freq / nyq
+    b, a = butter(5, normal_cutoff, btype='low', analog=False)
+    y = filtfilt(b, a, x)
+    return y
+
+def sinc_interp_fft(x, N = 300):
+    L = len(x)  # 采样点数
+    T = N / L
+    # 生成sinc函数采样
+    sinc_sample = np.sinc(np.arange(-L, L, 1/T))
+    # FFT加速卷积
+    y = np.fft.ifft(np.fft.fft(x, N + len(sinc_sample) - 1) * np.fft.fft(sinc_sample, N + len(sinc_sample) - 1))
+    return y[:N].real  # 取实部，因为FFT可能产生小的虚部成分
+
+def extract_spectral_features(signal, fs=50):
+    '''
+    Output:
+        (1 x 6)的numpy array: 频谱特征向量，包括频谱能量、频谱中心、频谱带宽、频率峰值位置、频谱偏度和频谱峰度
+    '''
+    # 计算傅立叶变换
+    fft_result = np.fft.fft(signal)
+    freqs = np.fft.fftfreq(len(signal), 1/fs)
+
+    # 提取频谱特征
+    energy = np.sum(np.abs(fft_result)**2)  # 频谱能量
+    center_freq = np.sum(freqs * np.abs(fft_result)**2) / np.sum(np.abs(fft_result)**2)  # 频谱中心
+    bandwidth = np.std(freqs)  # 频谱带宽
+    peak_freq = freqs[np.argmax(np.abs(fft_result))]  # 频率峰值位置
+    skewness = np.sum((freqs - center_freq)**3 * np.abs(fft_result)**2) / np.sum(np.abs(fft_result)**2)  # 频谱偏度
+    kurtosis = np.sum((freqs - center_freq)**4 * np.abs(fft_result)**2) / np.sum(np.abs(fft_result)**2)  # 频谱峰度
+    
+    # 构建特征向量
+    feature_vector = [energy, center_freq, bandwidth, peak_freq, skewness, kurtosis]
+    
+    return feature_vector
 
 def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, model, rotdir, noise_flag=None,
                            noise_level=0.1):  # num从1开始
+    '''
+    Input:
+        data_head: (time_length x 7)的numpy array: 头部数据，包括四元组和头部坐标
+        data_eye: (time_length x 9)的numpy array: 眼睛数据，包括左右眼四元组 和 一列不懂是什么的数据
+    Output:
+        用来contatenate的每个元素都是extract_features的输出:
+         ((切段数量 * 特征数量) x 1)的 numpy array: 特征包括设定的统计学特征和其一阶导数 [特征1-段1, 特征1-段2, ..., 特征1-段n, 特征2-段1, 特征2-段2, ..., 特征1导数-段1, 特征1导数-段2, ..., 特征1导数-段n, ...]
 
+        若想要lstm输入, 需要reshape成(切段数量, 特征数量), 可以执行如下操作; result = np.reshape(result, (-1, len(ranges)-1)).T 其中len(ranges)-1是段数
+    '''
     # 四元组 calculate为世界坐标，raw为头部局域坐标下的旋转数值
     d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el, \
         d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, \
-        d4_er_feat = feature_process_quaternion(data_head=data_head, data_eye=data_eye, ranges=ranges,
+        d4_er_feat, d1_0, d2_0, d3_0, d4_0, v1_0, v2_0, v3_0, d1_el_0, d2_el_0, d3_el_0, d4_el_0, d1_er_0, d2_er_0, d3_er_0, d4_er_0 \
+    = feature_process_quaternion(data_head=data_head, data_eye=data_eye, ranges=ranges,
                                                 noise_flag=noise_flag, noise_level=noise_level)
+    if model.find('lstm_head+eye') != -1: 
+        # visualize the spline interpolation to check the effect
+        # plt.plot(d1_0)
+        # d1_00 = spline_interp(d1_0)
+        # plt.plot(d1_00)
+        # plt.show()
+        
+        # plt.plot(d2_0)
+        # d2_00 = spline_interp(d2_0)
+        # plt.plot(d2_00)
+        # plt.show()
 
-    if model == 'head':
+
+        # merged_array = np.concatenate([spline_interp(d1_0), spline_interp(d2_0), spline_interp(d3_0), spline_interp(d4_0), spline_interp(v1_0), spline_interp(v2_0), spline_interp(v3_0), spline_interp(d1_el_0), spline_interp(d2_el_0), spline_interp(d3_el_0), spline_interp(d4_el_0), spline_interp(d1_er_0), spline_interp(d2_er_0), spline_interp(d3_er_0), spline_interp(d4_er_0)]) # original
+        merged_array = np.concatenate([spline_interp(d1), spline_interp(d2), spline_interp(d3), spline_interp(d4), spline_interp(v1), spline_interp(v2), spline_interp(v3), spline_interp(d1_el), spline_interp(d2_el), spline_interp(d3_el), spline_interp(d4_el), spline_interp(d1_er), spline_interp(d2_er), spline_interp(d3_er), spline_interp(d4_er)]) # smoothed
+
+    elif model == 'head':
         merged_array = np.concatenate(
             [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat])
         # [d1_feat, d2_feat, d3_feat])
@@ -592,13 +801,25 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
             [d1_el_feat, d2_el_feat, d3_el_feat,
              d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, ])
     elif model == "head+eye":
+        # merged_array = np.concatenate(
+        #     [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat, d3_el_feat, d4_el_feat])
+        
+        # add spectral features update 202405014
+        merged_array = np.concatenate(
+            [\
+                # d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat, d3_el_feat, d4_el_feat, \
+            #  d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, \
+            #  extract_spectral_features(d1), extract_spectral_features(d2), extract_spectral_features(d3), extract_spectral_features(d4), \
+            #  extract_spectral_features(v1), extract_spectral_features(v2), extract_spectral_features(v3), \
+             extract_spectral_features(d1_el), extract_spectral_features(d2_el), extract_spectral_features(d3_el), extract_spectral_features(d4_el), \
+             extract_spectral_features(d1_er), extract_spectral_features(d2_er), extract_spectral_features(d3_er), extract_spectral_features(d4_er)\
+            ])
+
         # 利用特征：切10段的特征
         # merged_array = np.concatenate(
         #     [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat,
         #      d3_el_feat,
         #      d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, ])
-        merged_array = np.concatenate(
-            [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat, d3_el_feat, d4_el_feat])
     elif model == "diff":
         diff_yaw_data = difference_gaze_head(member, size, pin, num, rotdir=rotdir, noise_flag=noise_flag,
                                              noise_level=noise_level)
@@ -635,12 +856,9 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
              d4_el_feat, d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat,
              dy_el_feat, dp_el_feat, dr_el_feat])
 
-    # print(d1)
-    # if np.isnan(d1_feat).any():
-    #     print("NaN values found in d1_feat")
-    #     # 定位NaN值
-    #     print(np.argwhere(np.isnan(d1_feat)))
+    
 
+    # print(f"merged_array.shape: {merged_array.shape}")
     return merged_array
 
 
@@ -649,11 +867,17 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                            pin_list=None, default_authentications_per_person=6,
                            positive_label=None, noise_level=0.1, augment_time=1):  # 返回scaled后的原始数据和标签，scaled后的增强后的数据和标签
 
+    print("smoothed")
     studytype_user_date_size_pin_num_pair = []  # studytype, user, date, size, pin, num 的所有排列组合，用于数据增强时循环增强所有正标签里的数据
     result_array = np.array([])
     studytype = studytype_users_dates_range[0].split('_')[0]  # studytype只有一种
     labels = []
     binary_labels = []
+    transpose_param = 300 #是切段数量(默认300), 和extract_features的slice_num参数相同，或是插值后的信号长度(默认300)
+
+    # for lstm, update 20240504
+    result_array_lstm = np.array([])
+    # end update
 
     for member in studytype_users_dates_range:
         user = member.split('_')[1]
@@ -683,6 +907,7 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                     data_head, data_eye, ranges = head_eye_slice_quaternion_read(head_data_dir=head_path,
                                                                                  eye_data_dir=eye_path,
                                                                                  segment_data_dir=segment_path)
+                    # print(f"data_head: {data_head.shape}, data_eye: {data_eye.shape}")
                     # 1.1 update 数据增强
                     for i in range(1, augment_time + 1):
                         noise_flag = False if i == 1 else True  # 增强倍数大于1则选择增强，首次循环（i=1）为False
@@ -701,8 +926,18 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                             binary_labels.append(1 if user in positive_label else 0) # 标签的生成，按照人名的唯一性
                             # 将所有特征堆叠起来，每一行是一个特征
                             result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array
+                            # for lstm, update 20240504
+                            # print(f"merged_array.shape: {merged_array.shape}")
+                            if model.find("lstm") != -1: # model的关键字
+                                b = np.reshape(merged_array, (-1, transpose_param)).T
+                                b_new = b[np.newaxis, :]
+                                result_array_lstm = np.vstack((result_array_lstm, b_new)) if result_array_lstm.size else b_new  # 
+                            # end update
 
     scaled_data = result_array
+    # for lstm, update 20240504
+    scaled_data_lstm = result_array_lstm
+    # end update
 
     # 识别正类样本
     positive_indices = np.where(binary_labels == 1)[0]
@@ -719,6 +954,9 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
         loop_num = 0
         index = 0
         positive_features_to_augment = np.array([])
+        # for lstm, update 20240504
+        positive_features_to_augment_lstm = np.array([])
+        # end update
         binary_labels_to_concatenate = []
         # studytype user date size pin num
 
@@ -761,24 +999,41 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
                 binary_labels_to_concatenate.append(1)
                 positive_features_to_augment = np.vstack([positive_features_to_augment,
                                                       merged_array_augmented]) if positive_features_to_augment.size else merged_array_augmented
+                # for lstm, update 20240504
+                if model.find("lstm") != -1:
+                    b = np.reshape(merged_array_augmented, (-1, transpose_param)).T
+                    b_new = b[np.newaxis, :]
+                    positive_features_to_augment_lstm = np.vstack((positive_features_to_augment_lstm,
+                                                        b_new)) if positive_features_to_augment_lstm.size else b_new
+                # end update
 
             index = (index + 1) % len(studytype_user_date_size_pin_num_pair_to_copy)
 
             loop_num += 1
 
         # 将增强的样本合并回原始数据集
-        result_array_augmented = np.concatenate((result_array, positive_features_to_augment), axis=0)
+        # result_array_augmented = np.concatenate((result_array, positive_features_to_augment), axis=0)
+        result_array_augmented = np.vstack([result_array, positive_features_to_augment])
+        # for lstm, update 20240504
+        result_array_augmented_lstm = np.vstack((scaled_data_lstm, positive_features_to_augment_lstm))
+        # end update
         print(f"result_array.shape: {result_array.shape}")
         print(f"positive_features_to_augment.shape: {positive_features_to_augment.shape}")
         print(f"result_array_augmented.shape: {result_array_augmented.shape}")
         # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
         binary_labels_augmented = np.concatenate((binary_labels, binary_labels_to_concatenate), axis=0)
         scaled_data_augmented = result_array_augmented
+        # for lstm, update 20240504
+        scaled_data_augmented_lstm = result_array_augmented_lstm
+        # end update
     else:
         # 如果不需要增加正样本，则保持原始数据不变
         scaled_data_augmented = scaled_data
+        # for lstm, update 20240504
+        scaled_data_augmented_lstm = scaled_data_lstm
+        # end update
         # label_augmented = labels
         binary_labels_augmented = binary_labels
 
     return scaled_data, np.array(labels), np.array(binary_labels), scaled_data_augmented, np.array(
-        binary_labels_augmented)
+        binary_labels_augmented), scaled_data_lstm, scaled_data_augmented_lstm
