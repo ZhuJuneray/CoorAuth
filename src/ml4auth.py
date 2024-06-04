@@ -596,12 +596,11 @@ def svm_multi_kfolds(kernel="linear", C=1, gamma=0.02, n_splits=3, data_scaled=N
           "\nf1s:", average_f1s)
 
 
-################################################################ svm kfold 多分类
-def rf_multi_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None):
+################################################################ rf kfold 多分类
+def rf_multi_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
     for label in np.unique(labels):
         count = np.sum(labels == label)
         # print(f"Class {label}: {count} samples")
-    # 设置交叉验证的折叠数
     kf = StratifiedKFold(n_splits=n_splits, shuffle=True)
 
     # 初始化准确性列表，用于存储每个折叠的模型准确性
@@ -609,6 +608,15 @@ def rf_multi_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None)
     precisions = []
     recalls = []
     f1s = []
+    fars = []
+    frrs = []
+    
+    accuracies_latter = []
+    precisions_latter = []
+    recalls_latter = []
+    f1s_latter = []
+    fars_latter = []
+    frrs_latter = []
 
     for train_index, test_index in kf.split(data_scaled, labels):
         X_train, X_test = data_scaled[train_index], data_scaled[test_index]
@@ -619,14 +627,14 @@ def rf_multi_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None)
         X_train = scaler.fit_transform(X_train)
         X_test = scaler.transform(X_test)
 
-        # 创建SVM模型
-        svm_model = RandomForestClassifier(n_estimators=n_estimators)
+        # 创建模型
+        rf_model = RandomForestClassifier(n_estimators=n_estimators)
 
         # 模型训练
-        svm_model.fit(X_train, y_train)
+        rf_model.fit(X_train, y_train)
 
         # 模型预测
-        y_pred = svm_model.predict(X_test)
+        y_pred = rf_model.predict(X_test)
 
         # 计算准确性
         accuracy = accuracy_score(y_test, y_pred)
@@ -637,16 +645,72 @@ def rf_multi_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None)
         recalls.append(recall)
         f1s.append(f1)
 
+        # conf_matrix = confusion_matrix(y_test, y_pred)
+        # true_positive = conf_matrix[1, 1]
+        # false_positive = conf_matrix[0, 1]
+        # true_negative = conf_matrix[0, 0]
+        # false_negative = conf_matrix[1, 0]
+
+        # # 计算 FAR 和 FRR
+        # far = false_positive / (false_positive + true_negative)
+        # frr = false_negative / (false_negative + true_positive)
+
+        # fars.append(far)
+        # frrs.append(frr)
+
+        # 随时间推移的准确率
+        if latter_data_scaled is not None:
+            latter_y_pred = rf_model.predict(latter_data_scaled)
+            latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+            accuracies_latter.append(latter_accuracy)
+            latter_precision, latter_recall, latter_f1, _ = precision_recall_fscore_support(latter_labels, latter_y_pred, average='weighted', zero_division=1)
+            precisions_latter.append(latter_precision)
+            recalls_latter.append(latter_recall)
+            f1s_latter.append(latter_f1)
+
+            print("latter_y_pred, latter_labels")
+            print(latter_y_pred, latter_labels)
+
+            # conf_matrix_latter = confusion_matrix(latter_labels, latter_y_pred)
+            # true_positive_latter = conf_matrix_latter[1, 1]
+            # false_positive_latter = conf_matrix_latter[0, 1]
+            # true_negative_latter = conf_matrix_latter[0, 0]
+            # false_negative_latter = conf_matrix_latter[1, 0]
+
+            # # 计算 FAR 和 FRR
+            # far_latter = false_positive_latter / (false_positive_latter + true_negative_latter)
+            # frr_latter = false_negative_latter / (false_negative_latter + true_positive_latter)
+
+            # fars_latter.append(far_latter)
+            # frrs_latter.append(frr_latter)
+
+
     average_accuracy = np.mean(accuracies)
     average_precision = np.mean(precisions)
     average_recalls = np.mean(recalls)
     average_f1s = np.mean(f1s)
+    average_fars = np.mean(fars)
+    average_frrs = np.mean(frrs)
 
     print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
-          "\nf1s:", average_f1s)
+          "\nf1s:", average_f1s, "\nfars:", average_fars, "\nfrrs:", average_frrs)
+
+    if latter_data_scaled is not None:
+        average_accuracy_latter = np.mean(accuracies_latter)
+        average_precision_latter = np.mean(precisions_latter)
+        average_recalls_latter = np.mean(recalls_latter)
+        average_f1s_latter = np.mean(f1s_latter)
+        average_fars_latter = np.mean(fars_latter)
+        average_frrs_latter = np.mean(frrs_latter)
+        
+
+        print("随时间推移的准确率")
+        print("Average Accuracy Latter:", average_accuracy_latter, "\nprecision:", average_precision_latter, "\nrecalls:", average_recalls_latter,
+              "\nf1s:", average_f1s_latter, "\nfars:", average_fars_latter, "\nfrrs:", average_frrs_latter)
+    
 
 ################################################################ rf 二分类
-def rf_binary_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None):
+def rf_binary_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
     # 打印各类别的样本数量
     for label in np.unique(labels):
         count = np.sum(labels == label)
@@ -660,6 +724,15 @@ def rf_binary_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None
     precisions = []
     recalls = []
     f1s = []
+    fars = []
+    frrs = []
+    
+    accuracies_latter = []
+    precisions_latter = []
+    recalls_latter = []
+    f1s_latter = []
+    fars_latter = []
+    frrs_latter = []
 
     # 进行交叉验证
     for train_index, test_index in kf.split(data_scaled, labels):
@@ -689,10 +762,62 @@ def rf_binary_kfolds(n_estimators=100, n_splits=3, data_scaled=None, labels=None
         recalls.append(recall)
         f1s.append(f1)
 
+        # conf_matrix = confusion_matrix(y_test, y_pred)
+        # true_positive = conf_matrix[1, 1]
+        # false_positive = conf_matrix[0, 1]
+        # true_negative = conf_matrix[0, 0]
+        # false_negative = conf_matrix[1, 0]
+
+        # # 计算 FAR 和 FRR
+        # far = false_positive / (false_positive + true_negative)
+        # frr = false_negative / (false_negative + true_positive)
+
+        # fars.append(far)
+        # frrs.append(frr)
+
+        # 随时间推移的准确率
+        if latter_data_scaled is not None:
+            latter_y_pred = rf_model.predict(latter_data_scaled)
+            latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
+            accuracies_latter.append(latter_accuracy)
+            latter_precision, latter_recall, latter_f1, _ = precision_recall_fscore_support(latter_labels, latter_y_pred, average='weighted', zero_division=1)
+            precisions_latter.append(latter_precision)
+            recalls_latter.append(latter_recall)
+            f1s_latter.append(latter_f1)
+
+            print("latter_y_pred, latter_labels")
+            print(latter_y_pred, latter_labels)
+
+            # conf_matrix_latter = confusion_matrix(latter_labels, latter_y_pred)
+            # true_positive_latter = conf_matrix_latter[1, 1]
+            # false_positive_latter = conf_matrix_latter[0, 1]
+            # true_negative_latter = conf_matrix_latter[0, 0]
+            # false_negative_latter = conf_matrix_latter[1, 0]
+
+            # # 计算 FAR 和 FRR
+            # far_latter = false_positive_latter / (false_positive_latter + true_negative_latter)
+            # frr_latter = false_negative_latter / (false_negative_latter + true_positive_latter)
+
+            # fars_latter.append(far_latter)
+            # frrs_latter.append(frr_latter)
+
     # 计算平均指标
     average_accuracy = np.mean(accuracies)
     average_precision = np.mean(precisions)
     average_recalls = np.mean(recalls)
     average_f1s = np.mean(f1s)
+    average_fars = np.mean(fars)
+    average_frrs = np.mean(frrs)
 
-    print("Average Accuracy:", average_accuracy, "\nPrecision:", average_precision, "\nRecalls:", average_recalls, "\nF1 Scores:", average_f1s)
+    print("Average Accuracy:", average_accuracy, "\nPrecision:", average_precision, "\nRecalls:", average_recalls, "\nF1 Scores:", average_f1s, "\nFARs:", average_fars, "\nFRRs:", average_frrs)
+
+    if latter_data_scaled is not None:
+        average_accuracy_latter = np.mean(accuracies_latter)
+        average_precision_latter = np.mean(precisions_latter)
+        average_recalls_latter = np.mean(recalls_latter)
+        average_f1s_latter = np.mean(f1s_latter)
+        average_fars_latter = np.mean(fars_latter)
+        average_frrs_latter = np.mean(frrs_latter)
+
+        print("随时间推移的准确率")
+        print("Average Accuracy Latter:", average_accuracy_latter, "\nPrecision:", average_precision_latter, "\nRecalls:", average_recalls_latter, "\nF1 Scores:", average_f1s_latter, "\nFARs:", average_fars_latter, "\nFRRs:", average_frrs_latter)

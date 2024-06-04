@@ -71,7 +71,7 @@ def smooth_data(arr, window_parameter=9, polyorder_parameter=2):  # 平滑数据
 def extract_features(sequence, slice_num=4, ranges=None):
     '''
     Output:
-        ((切段数量 * 特征数量) x 1)的 numpy array: 特征包括设定的统计学特征和其一阶导数
+        (1 x (切段数量 * 特征数量))的 numpy array: 特征包括设定的统计学特征和其一阶导数
         [特征1-段1, 特征1-段2, ..., 特征1-段n, 特征2-段1, 特征2-段2, ..., 特征1导数-段1, 特征1导数-段2, ..., 特征1导数-段n, ...]
 
         若想要lstm输入, 需要reshape成(切段数量, 特征数量), 可以执行如下操作;
@@ -145,7 +145,7 @@ def extract_features(sequence, slice_num=4, ranges=None):
 def get_n_derivation_features(sequence, ranges):
     '''
     Output: 
-        ((切段数量 * 特征数量) x 1)的 numpy array:
+        (1 x (切段数量 * 特征数量))的 numpy array:
         [特征1-段1, 特征1-段2, ..., 特征1-段n, 特征2-段1, 特征2-段2, ..., 特征2-段n, ...]
 
         若想要lstm输入, 需要reshape成(切段数量, 特征数量), 可以执行如下操作;
@@ -408,7 +408,7 @@ def feature_process_quaternion(data_head=None, data_eye=None, ranges=None,
     '''
     Output:
         每个元祖的元素都是extract_features的输出:
-        ((切段数量 * 特征数量) x 1)的 numpy array: 特征包括设定的统计学特征和其一阶导数
+        (1 x (切段数量 * 特征数量))的 numpy array: 特征包括设定的统计学特征和其一阶导数
         [特征1-段1, 特征1-段2, ..., 特征1-段n, 特征2-段1, 特征2-段2, ..., 特征1导数-段1, 特征1导数-段2, ..., 特征1导数-段n, ...]
 
         若想要lstm输入, 需要reshape成(切段数量, 特征数量), 可以执行如下操作;
@@ -653,30 +653,6 @@ def sinc_interp_windowed(x, N=300, window_func=np.hanning):
     y = np.dot(sinc_mat, x)
     return y
 
-# def sinc_interp(x, N = 300):
-#     L = len(x)  # 采样点数
-#     T = N / L  # 计算插值因子
-#     n = np.arange(N)  # 目标点
-#     k = np.arange(L)  # 原始点
-#     y = np.zeros(N)
-    
-#     # 对每个目标位置应用sinc插值
-#     for i in range(N):
-#         y[i] = np.sum(x * np.sinc((n[i]/T - k)))
-#     return y
-
-# def sinc_interp(x, N=300):
-#     L = len(x)  # 采样点数
-#     T = N / L   # 计算插值因子
-#     n = np.arange(N)  # 目标点
-#     k = np.arange(L)  # 原始点
-
-#     # 计算所有n和k的组合的sinc参数
-#     sinc_matrix = np.sinc((n[:, None]/T - k[None, :]))
-
-#     # 通过矩阵乘法计算结果
-#     y = np.dot(sinc_matrix, x)
-#     return y
 
 def sinc_interp(x, N=300, beta=14):
     L = len(x)
@@ -757,7 +733,7 @@ def extract_spectral_features(signal, fs=50):
     return feature_vector
 
 def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, model, rotdir, noise_flag=None,
-                           noise_level=0.1):  # num从1开始
+                           noise_level=0.1, lstm_model=""):  # num从1开始
     '''
     Input:
         data_head: (time_length x 7)的numpy array: 头部数据，包括四元组和头部坐标
@@ -768,13 +744,15 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
 
         若想要lstm输入, 需要reshape成(切段数量, 特征数量), 可以执行如下操作; result = np.reshape(result, (-1, len(ranges)-1)).T 其中len(ranges)-1是段数
     '''
+    merged_array = None
+    merged_array_lstm = None
     # 四元组 calculate为世界坐标，raw为头部局域坐标下的旋转数值
     d1, d1_feat, d2, d2_feat, d3, d3_feat, d4, d4_feat, v1, v1_feat, v2, v2_feat, v3, v3_feat, d1_el, d1_el_feat, d2_el, \
         d2_el_feat, d3_el, d3_el_feat, d4_el, d4_el_feat, d1_er, d1_er_feat, d2_er, d2_er_feat, d3_er, d3_er_feat, d4_er, \
         d4_er_feat, d1_0, d2_0, d3_0, d4_0, v1_0, v2_0, v3_0, d1_el_0, d2_el_0, d3_el_0, d4_el_0, d1_er_0, d2_er_0, d3_er_0, d4_er_0 \
     = feature_process_quaternion(data_head=data_head, data_eye=data_eye, ranges=ranges,
                                                 noise_flag=noise_flag, noise_level=noise_level)
-    if model.find('lstm_head+eye') != -1: 
+    if lstm_model=='lstm_head+eye': 
         # visualize the spline interpolation to check the effect
         # plt.plot(d1_0)
         # d1_00 = spline_interp(d1_0)
@@ -788,9 +766,9 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
 
 
         # merged_array = np.concatenate([spline_interp(d1_0), spline_interp(d2_0), spline_interp(d3_0), spline_interp(d4_0), spline_interp(v1_0), spline_interp(v2_0), spline_interp(v3_0), spline_interp(d1_el_0), spline_interp(d2_el_0), spline_interp(d3_el_0), spline_interp(d4_el_0), spline_interp(d1_er_0), spline_interp(d2_er_0), spline_interp(d3_er_0), spline_interp(d4_er_0)]) # original
-        merged_array = np.concatenate([spline_interp(d1), spline_interp(d2), spline_interp(d3), spline_interp(d4), spline_interp(v1), spline_interp(v2), spline_interp(v3), spline_interp(d1_el), spline_interp(d2_el), spline_interp(d3_el), spline_interp(d4_el), spline_interp(d1_er), spline_interp(d2_er), spline_interp(d3_er), spline_interp(d4_er)]) # smoothed
+        merged_array_lstm = np.concatenate([spline_interp(d1), spline_interp(d2), spline_interp(d3), spline_interp(d4), spline_interp(v1), spline_interp(v2), spline_interp(v3), spline_interp(d1_el), spline_interp(d2_el), spline_interp(d3_el), spline_interp(d4_el), spline_interp(d1_er), spline_interp(d2_er), spline_interp(d3_er), spline_interp(d4_er)]) # smoothed
 
-    elif model == 'head':
+    if model == 'head':
         merged_array = np.concatenate(
             [d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat])
         # [d1_feat, d2_feat, d3_feat])
@@ -807,10 +785,9 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
         # add spectral features update 202405014
         merged_array = np.concatenate(
             [\
-                # d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat, d3_el_feat, d4_el_feat, \
-            #  d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, \
-            #  extract_spectral_features(d1), extract_spectral_features(d2), extract_spectral_features(d3), extract_spectral_features(d4), \
-            #  extract_spectral_features(v1), extract_spectral_features(v2), extract_spectral_features(v3), \
+                d1_feat, d2_feat, d3_feat, d4_feat, v1_feat, v2_feat, v3_feat, d1_el_feat, d2_el_feat, d3_el_feat, d4_el_feat, \
+             d1_er_feat, d2_er_feat, d3_er_feat, d4_er_feat, \
+             extract_spectral_features(d1), extract_spectral_features(d2), extract_spectral_features(d3), 
              extract_spectral_features(d1_el), extract_spectral_features(d2_el), extract_spectral_features(d3_el), extract_spectral_features(d4_el), \
              extract_spectral_features(d1_er), extract_spectral_features(d2_er), extract_spectral_features(d3_er), extract_spectral_features(d4_er)\
             ])
@@ -859,11 +836,11 @@ def merged_array_generator(data_head, data_eye, ranges, member, size, pin, num, 
     
 
     # print(f"merged_array.shape: {merged_array.shape}")
-    return merged_array
+    return merged_array, merged_array_lstm
 
 
 # 返回整理好的能用于模型训练测试的X和Y
-def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", size_list=None,
+def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", lstm_model="", size_list=None,
                            pin_list=None, default_authentications_per_person=6,
                            positive_label=None, noise_level=0.1, augment_time=1):  # 返回scaled后的原始数据和标签，scaled后的增强后的数据和标签
 
@@ -873,7 +850,7 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
     studytype = studytype_users_dates_range[0].split('_')[0]  # studytype只有一种
     labels = []
     binary_labels = []
-    transpose_param = 300 #是切段数量(默认300), 和extract_features的slice_num参数相同，或是插值后的信号长度(默认300)
+    transpose_param = 300 #是切段数量(默认4), 和extract_features的slice_num参数相同，或是插值后的信号长度(默认300)
 
     # for lstm, update 20240504
     result_array_lstm = np.array([])
@@ -914,22 +891,26 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
 
                         # 对于该增强噪声的水平 返回该member, size, pin, num的特征, 返回一维X向量
                         try: # 跳过saccade文件里只有一段fixation的情况，
-                            merged_array = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
-                                                                member=member, rotdir=rotdir, model=model, size=size, pin=pin,
+                            merged_array, lstm_merged_array = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
+                                                                member=member, rotdir=rotdir, model=model, lstm_model=lstm_model, size=size, pin=pin,
                                                                 num=num, noise_flag=noise_flag, noise_level=noise_level)
                         except IndexError as e:
-                            print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+                            # print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+                            pass
                         except ValueError as e:
-                            print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
-                        if not np.isnan(merged_array).any():
+                            # print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+                            pass
+                        # print(f"merged_array.shape: {merged_array.shape}, lstm_merged_array.shape: {lstm_merged_array.shape}")
+                        # print(lstm_merged_array)
+                        if not np.isnan(merged_array).any() and not np.isnan(lstm_merged_array).any():
                             labels.append(user) # label生成，如果
                             binary_labels.append(1 if user in positive_label else 0) # 标签的生成，按照人名的唯一性
-                            # 将所有特征堆叠起来，每一行是一个特征
+                            # 将所有特征堆叠起来，每一行是一个sample
                             result_array = np.vstack([result_array, merged_array]) if result_array.size else merged_array
                             # for lstm, update 20240504
-                            # print(f"merged_array.shape: {merged_array.shape}")
-                            if model.find("lstm") != -1: # model的关键字
-                                b = np.reshape(merged_array, (-1, transpose_param)).T
+                            if lstm_model.find("lstm") != -1: # model的关键字
+                                # lstm_merged_array = np.vstack([lstm_merged_array, lstm_merged_array]) if lstm_merged_array.size else lstm_merged_array
+                                b = np.reshape(lstm_merged_array, (-1, transpose_param)).T
                                 b_new = b[np.newaxis, :]
                                 result_array_lstm = np.vstack((result_array_lstm, b_new)) if result_array_lstm.size else b_new  # 
                             # end update
@@ -939,101 +920,105 @@ def data_augment_and_label(studytype_users_dates_range, rotdir=None, model="", s
     scaled_data_lstm = result_array_lstm
     # end update
 
-    # 识别正类样本
-    positive_indices = np.where(binary_labels == 1)[0]
+    # 古早版本的数据增强
 
-    # 确定增强的正样本数量以达到大约50%的正样本比例
-    total_samples_needed = len(binary_labels)  # 总样本数
-    # positive_samples_needed = int(total_samples_needed) - 2 * len(positive_indices)  # 需要增强的正样本数
-    positive_samples_needed = 0
+    # # 识别正类样本
+    # positive_indices = np.where(binary_labels == 1)[0]
 
-    # 如果需要增强的样本数为负数或零，则不执行任何操作
-    if positive_samples_needed > 0:
-        # 选择正样本进行复制和添加噪声
-        users_to_copy = np.random.choice(positive_label, size=positive_samples_needed, replace=True)
-        loop_num = 0
-        index = 0
-        positive_features_to_augment = np.array([])
-        # for lstm, update 20240504
-        positive_features_to_augment_lstm = np.array([])
-        # end update
-        binary_labels_to_concatenate = []
-        # studytype user date size pin num
+    # # 确定增强的正样本数量以达到大约50%的正样本比例
+    # total_samples_needed = len(binary_labels)  # 总样本数
+    # # positive_samples_needed = int(total_samples_needed) - 2 * len(positive_indices)  # 需要增强的正样本数
+    # positive_samples_needed = 0
 
-        while loop_num < positive_samples_needed:
-            user_to_copy = users_to_copy[loop_num]
-            studytype_user_date_size_pin_num_pair_to_copy = [x for x in studytype_user_date_size_pin_num_pair if
-                                                             x[1] == user_to_copy]  # user_to_copy的所有组合
-            studytype_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][0]
-            date_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][2]
-            size_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][3]
-            pin_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][4]
-            num_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][5]
+    # # 如果需要增强的样本数为负数或零，则不执行任何操作
+    # if positive_samples_needed > 0:
+    #     # 选择正样本进行复制和添加噪声
+    #     users_to_copy = np.random.choice(positive_label, size=positive_samples_needed, replace=True)
+    #     loop_num = 0
+    #     index = 0
+    #     positive_features_to_augment = np.array([])
+    #     # for lstm, update 20240504
+    #     positive_features_to_augment_lstm = np.array([])
+    #     # end update
+    #     binary_labels_to_concatenate = []
+    #     # studytype user date size pin num
 
-            # Add more debug prints
-            print("studytype_to_copy:", studytype_to_copy)
-            print("date_to_copy:", date_to_copy)
-            print("size_to_copy:", size_to_copy)
-            print("pin_to_copy:", pin_to_copy)
-            print("num_to_copy:", num_to_copy)
+    #     while loop_num < positive_samples_needed:
+    #         user_to_copy = users_to_copy[loop_num]
+    #         studytype_user_date_size_pin_num_pair_to_copy = [x for x in studytype_user_date_size_pin_num_pair if
+    #                                                          x[1] == user_to_copy]  # user_to_copy的所有组合
+    #         studytype_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][0]
+    #         date_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][2]
+    #         size_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][3]
+    #         pin_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][4]
+    #         num_to_copy = studytype_user_date_size_pin_num_pair_to_copy[index][5]
 
-            member_to_copy = f"{studytype_to_copy}_{user_to_copy}_{date_to_copy}"  # 用于merged_array_generator的member参数
-            # {studytype_to_copy[-1]}是为了根据studyn取VRAuth后面的数字
-            head_path = rotdir + f"VRAuth2/P{user_to_copy}/Head_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
-            eye_path = rotdir + f"VRAuth2/P{user_to_copy}/GazeCalculate_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
-            segment_path = rotdir + f"VRAuth2/P{user_to_copy}/Saccades_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.txt"
-            data_head, data_eye, ranges = head_eye_slice_quaternion_read(head_data_dir=head_path,
-                                                                         eye_data_dir=eye_path,
-                                                                         segment_data_dir=segment_path)
+    #         # Add more debug prints
+    #         print("studytype_to_copy:", studytype_to_copy)
+    #         print("date_to_copy:", date_to_copy)
+    #         print("size_to_copy:", size_to_copy)
+    #         print("pin_to_copy:", pin_to_copy)
+    #         print("num_to_copy:", num_to_copy)
 
-            try:# 跳过saccade文件里只有一段fixation的情况，
-                merged_array_augmented = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
-                                                            member=member_to_copy, rotdir=rotdir, model=model,
-                                                            size=size_to_copy, pin=pin_to_copy, num=num_to_copy,
-                                                            noise_flag=True, noise_level=noise_level)
-            except IndexError as e:
-                print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
-            except ValueError as e:
-                print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
-            if not np.isnan(merged_array_augmented).any(): # 如果增强后出现空特征
-                binary_labels_to_concatenate.append(1)
-                positive_features_to_augment = np.vstack([positive_features_to_augment,
-                                                      merged_array_augmented]) if positive_features_to_augment.size else merged_array_augmented
-                # for lstm, update 20240504
-                if model.find("lstm") != -1:
-                    b = np.reshape(merged_array_augmented, (-1, transpose_param)).T
-                    b_new = b[np.newaxis, :]
-                    positive_features_to_augment_lstm = np.vstack((positive_features_to_augment_lstm,
-                                                        b_new)) if positive_features_to_augment_lstm.size else b_new
-                # end update
+    #         member_to_copy = f"{studytype_to_copy}_{user_to_copy}_{date_to_copy}"  # 用于merged_array_generator的member参数
+    #         # {studytype_to_copy[-1]}是为了根据studyn取VRAuth后面的数字
+    #         head_path = rotdir + f"VRAuth2/P{user_to_copy}/Head_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
+    #         eye_path = rotdir + f"VRAuth2/P{user_to_copy}/GazeCalculate_data_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.csv"
+    #         segment_path = rotdir + f"VRAuth2/P{user_to_copy}/Saccades_{studytype_to_copy}-{user_to_copy}-{date_to_copy}-{str(size_to_copy)}-{str(pin_to_copy)}-{str(num_to_copy)}.txt"
+    #         data_head, data_eye, ranges = head_eye_slice_quaternion_read(head_data_dir=head_path,
+    #                                                                      eye_data_dir=eye_path,
+    #                                                                      segment_data_dir=segment_path)
 
-            index = (index + 1) % len(studytype_user_date_size_pin_num_pair_to_copy)
+    #         try:# 跳过saccade文件里只有一段fixation的情况，
+    #             merged_array_augmented = merged_array_generator(data_head=data_head, data_eye=data_eye, ranges=ranges,
+    #                                                         member=member_to_copy, rotdir=rotdir, model=model,
+    #                                                         size=size_to_copy, pin=pin_to_copy, num=num_to_copy,
+    #                                                         noise_flag=True, noise_level=noise_level)
+    #         except IndexError as e:
+    #             print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+    #         except ValueError as e:
+    #             print(f"member: {member}, size: {size}, pin: {pin}, num: {num}, augment_time: {i}")
+    #         if not np.isnan(merged_array_augmented).any(): # 如果增强后出现空特征
+    #             binary_labels_to_concatenate.append(1)
+    #             positive_features_to_augment = np.vstack([positive_features_to_augment,
+    #                                                   merged_array_augmented]) if positive_features_to_augment.size else merged_array_augmented
+    #             # for lstm, update 20240504
+    #             if lstm_model.find("lstm") != -1:
+    #                 merged_array_augmented_lstm = merged_array_augmented[0]
+    #                 b = np.reshape(merged_array_augmented, (-1, transpose_param)).T
+    #                 b_new = b[np.newaxis, :]
+    #                 positive_features_to_augment_lstm = np.vstack((positive_features_to_augment_lstm,
+    #                                                     b_new)) if positive_features_to_augment_lstm.size else b_new
+    #             # end update
 
-            loop_num += 1
+    #         index = (index + 1) % len(studytype_user_date_size_pin_num_pair_to_copy)
 
-        # 将增强的样本合并回原始数据集
-        # result_array_augmented = np.concatenate((result_array, positive_features_to_augment), axis=0)
-        result_array_augmented = np.vstack([result_array, positive_features_to_augment])
-        # for lstm, update 20240504
-        result_array_augmented_lstm = np.vstack((scaled_data_lstm, positive_features_to_augment_lstm))
-        # end update
-        print(f"result_array.shape: {result_array.shape}")
-        print(f"positive_features_to_augment.shape: {positive_features_to_augment.shape}")
-        print(f"result_array_augmented.shape: {result_array_augmented.shape}")
-        # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
-        binary_labels_augmented = np.concatenate((binary_labels, binary_labels_to_concatenate), axis=0)
-        scaled_data_augmented = result_array_augmented
-        # for lstm, update 20240504
-        scaled_data_augmented_lstm = result_array_augmented_lstm
-        # end update
-    else:
-        # 如果不需要增加正样本，则保持原始数据不变
-        scaled_data_augmented = scaled_data
-        # for lstm, update 20240504
-        scaled_data_augmented_lstm = scaled_data_lstm
-        # end update
-        # label_augmented = labels
-        binary_labels_augmented = binary_labels
+    #         loop_num += 1
 
-    return scaled_data, np.array(labels), np.array(binary_labels), scaled_data_augmented, np.array(
-        binary_labels_augmented), scaled_data_lstm, scaled_data_augmented_lstm
+    #     # 将增强的样本合并回原始数据集
+    #     # result_array_augmented = np.concatenate((result_array, positive_features_to_augment), axis=0)
+    #     result_array_augmented = np.vstack([result_array, positive_features_to_augment])
+    #     # for lstm, update 20240504
+    #     result_array_augmented_lstm = np.vstack((scaled_data_lstm, positive_features_to_augment_lstm))
+    #     # end update
+    #     print(f"result_array.shape: {result_array.shape}")
+    #     print(f"positive_features_to_augment.shape: {positive_features_to_augment.shape}")
+    #     print(f"result_array_augmented.shape: {result_array_augmented.shape}")
+    #     # label_augmented = np.concatenate((labels, labels[indices_to_copy]), axis=0)
+    #     binary_labels_augmented = np.concatenate((binary_labels, binary_labels_to_concatenate), axis=0)
+    #     scaled_data_augmented = result_array_augmented
+    #     # for lstm, update 20240504
+    #     scaled_data_augmented_lstm = result_array_augmented_lstm
+    #     # end update
+    # else:
+    #     # 如果不需要增加正样本，则保持原始数据不变
+    #     scaled_data_augmented = scaled_data
+    #     # for lstm, update 20240504
+    #     scaled_data_augmented_lstm = scaled_data_lstm
+    #     # end update
+    #     # label_augmented = labels
+    #     binary_labels_augmented = binary_labels
+
+    # end 古早版本的数据增强
+
+    return scaled_data, np.array(labels), np.array(binary_labels), scaled_data_lstm

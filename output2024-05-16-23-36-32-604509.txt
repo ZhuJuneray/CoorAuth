@@ -1,0 +1,269 @@
+************ positive_label: ['14'] ************ 
+model:head+eye, augmentation_time: 100
+studytype_users_dates_range: ['study2_20_0119_1-15', 'study2_17_0119_1-15', 'study2_14_0118_1-10', 'study2_11_0118_1-7']
+n_split: 4, noise_level: 0.3
+segmantation num: 4
+----------------pin_list: [2]----------------
+smoothed
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 1
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 2
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 3
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 4
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 5
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 6
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 7
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 8
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 9
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 10
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 11
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 12
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 13
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 14
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 15
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 16
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 17
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 18
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 19
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 20
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 21
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 22
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 23
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 24
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 25
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 26
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 27
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 28
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 29
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 30
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 31
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 32
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 33
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 34
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 35
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 36
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 37
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 38
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 39
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 40
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 41
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 42
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 43
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 44
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 45
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 46
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 47
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 48
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 49
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 50
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 51
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 52
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 53
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 54
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 55
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 56
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 57
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 58
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 59
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 60
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 61
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 62
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 63
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 64
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 65
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 66
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 67
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 68
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 69
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 70
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 71
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 72
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 73
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 74
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 75
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 76
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 77
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 78
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 79
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 80
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 81
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 82
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 83
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 84
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 85
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 86
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 87
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 88
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 89
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 90
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 91
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 92
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 93
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 94
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 95
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 96
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 97
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 98
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 99
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 3, augment_time: 100
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 1
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 2
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 3
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 4
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 5
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 6
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 7
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 8
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 9
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 10
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 11
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 12
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 13
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 14
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 15
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 16
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 17
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 18
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 19
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 20
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 21
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 22
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 23
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 24
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 25
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 26
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 27
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 28
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 29
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 30
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 31
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 32
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 33
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 34
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 35
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 36
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 37
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 38
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 39
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 40
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 41
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 42
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 43
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 44
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 45
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 46
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 47
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 48
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 49
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 50
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 51
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 52
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 53
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 54
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 55
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 56
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 57
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 58
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 59
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 60
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 61
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 62
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 63
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 64
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 65
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 66
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 67
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 68
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 69
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 70
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 71
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 72
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 73
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 74
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 75
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 76
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 77
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 78
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 79
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 80
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 81
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 82
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 83
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 84
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 85
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 86
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 87
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 88
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 89
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 90
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 91
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 92
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 93
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 94
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 95
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 96
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 97
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 98
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 99
+member: study2_20_0119_1-15, size: 3, pin: 2, num: 15, augment_time: 100
+data_scaled:(4600, 1746)
+data_scaled_lstm:(4600, 300, 15)
+
+smoothed
+
+latter_data_scaled: (27, 1746)
+
+----------rf_binary_kfold------------
+Class 0: 3700 samples
+Class 1: 900 samples
+latter_y_pred, latter_labels
+[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] [1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0]
+latter_y_pred, latter_labels
+[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] [1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0]
+latter_y_pred, latter_labels
+[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] [1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0]
+latter_y_pred, latter_labels
+[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] [1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0]
+Average Accuracy: 1.0 
+Precision: 1.0 
+Recalls: 1.0 
+F1 Scores: 1.0 
+FARs: nan 
+FRRs: nan
+随时间推移的准确率
+Average Accuracy Latter: 0.7777777777777778 
+Precision: 0.8271604938271605 
+Recalls: 0.7777777777777778 
+F1 Scores: 0.6805555555555557 
+FARs: nan 
+FRRs: nan
+----------rf_multi_kfold------------
+latter_y_pred, latter_labels
+['11' '11' '11' '17' '11' '17' '11' '11' '11' '11' '11' '11' '11' '11'
+ '11' '17' '11' '11' '11' '11' '11' '11' '11' '11' '11' '11' '11'] ['14' '14' '11' '20' '17' '17' '20' '17' '17' '11' '17' '20' '11' '17'
+ '20' '14' '11' '11' '14' '14' '14' '11' '17' '20' '20' '20' '11']
+latter_y_pred, latter_labels
+['17' '17' '17' '17' '11' '17' '17' '17' '17' '17' '17' '17' '17' '17'
+ '17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17'] ['14' '14' '11' '20' '17' '17' '20' '17' '17' '11' '17' '20' '11' '17'
+ '20' '14' '11' '11' '14' '14' '14' '11' '17' '20' '20' '20' '11']
+latter_y_pred, latter_labels
+['11' '11' '11' '17' '11' '17' '11' '11' '11' '11' '11' '17' '11' '17'
+ '17' '11' '11' '11' '11' '11' '11' '11' '11' '17' '11' '17' '11'] ['14' '14' '11' '20' '17' '17' '20' '17' '17' '11' '17' '20' '11' '17'
+ '20' '14' '11' '11' '14' '14' '14' '11' '17' '20' '20' '20' '11']
+latter_y_pred, latter_labels
+['17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17'
+ '17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17' '17'] ['14' '14' '11' '20' '17' '17' '20' '17' '17' '11' '17' '20' '11' '17'
+ '20' '14' '11' '11' '14' '14' '14' '11' '17' '20' '20' '20' '11']
+Average Accuracy: 1.0 
+precision: 1.0 
+recalls: 1.0 
+f1s: 1.0 
+fars: nan 
+frrs: nan
+随时间推移的准确率
+Average Accuracy Latter: 0.2777777777777778 
+precision: 0.6597703650944391 
+recalls: 0.2777777777777778 
+f1s: 0.20943266147075268 
+fars: nan 
+frrs: nan
+程序运行时间：755.1049010753632秒

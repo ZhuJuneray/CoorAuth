@@ -1,0 +1,7 @@
+************ positive_label: ['14'] ************ 
+model:head+eye, augmentation_time: 1000
+studytype_users_dates_range: ['study2_20_0119_1-15', 'study2_17_0119_1-15', 'study2_14_0118_1-10', 'study2_11_0118_1-7']
+n_split: 4, noise_level: 0.3
+segmantation num: 4
+----------------pin_list: [1]----------------
+smoothed

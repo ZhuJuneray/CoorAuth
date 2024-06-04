@@ -34,11 +34,12 @@ def split_time_series(X, n):
 def main():
     current_working_directory = r"/Users/ray/Documents/VR_Authentication"
     os.chdir(current_working_directory)  # cwd的绝对路径
-    positive_label = ['4']  # 正样本
+    positive_label = ['14']  # 正样本, 如果要测latter, 则正样本需要是latter data里面的
     model = 'head+eye'  # model
+    lstm_model = 'lstm_head+eye'  # lstm model, 此举是因为lstm的数据处理方式不同
     n_split = 4  # k fold
     noise_level = 0.3  # 高斯噪声做数据增强的强度
-    augmentation_time = 10  # 数据增强数据量的倍数
+    augmentation_time = 1000  # 数据增强数据量的倍数
     size_list = [3]  # list of size
     all_pin_list = [1]  # pin list
     test_size = 0.3
@@ -48,7 +49,9 @@ def main():
     # json_name = 'data_condition.json'
     # json_name = 'data_given_3days.json'
     # json_name = 'data_own_3days.json'
-    json_name = 'data_split_trainset.json'
+    json_name = '20240515_test.json'
+
+    # print("")
 
     for poslabel in positive_label:
 
@@ -64,9 +67,9 @@ def main():
             pin_list = [pin]
             print(f"----------------pin_list: {pin_list}----------------")
             # 1.1update augment_time表示增强为原来数量的多少倍，如果留空则为默认值1，即全部为原始数据
-            data_scaled, labels, binary_labels, scaled_data_augmented, binary_labels_augmented, data_scaled_lstm, data_scaled_augmented_lstm = data_augment_and_label(
+            data_scaled, labels, binary_labels, data_scaled_lstm = data_augment_and_label(
                 default_authentications_per_person=9, rotdir=os.path.join(os.getcwd(), "data/"), positive_label=positive_label,
-                model=model, studytype_users_dates_range=read_data_latter_data_json(current_working_directory+'/src/'+json_name)[0],
+                model=model, lstm_model=lstm_model, studytype_users_dates_range=read_data_latter_data_json(current_working_directory+'/src/'+json_name)[0],
                 size_list=size_list, pin_list=pin_list,
                 noise_level=noise_level, augment_time=augmentation_time)
 
@@ -214,40 +217,41 @@ def main():
             # print("---------rf_multi------------")
             # rf_multi(data_scaled=data_scaled, labels=labels, test_size=test_size)
 
-            # print("----------lstm_binary_kfolds------------")
-            # lstm_binary_kfolds(data_scaled=data_scaled_augmented_lstm, binary_labels=binary_labels, epochs=20, batch_size=4)
-
-            # print("----------lstm_multi_kfolds------------")
-            # lstm_multi_kfolds(data_scaled=data_scaled_augmented_lstm, labels=labels, epochs=20, batch_size=4)
-
-            print("----------rf_binary_kfold------------")
-            rf_binary_kfolds(data_scaled=data_scaled, labels=binary_labels, n_splits=n_split)
-
-            print("----------rf_multi_kfold------------")
-            rf_multi_kfolds(data_scaled=data_scaled, labels=labels, n_splits=n_split)
-
             default_latter_auth_per_person = 4  # 每人采集次数
-            # latter_positive_label = positive_label  # 正样本, 与之前是一致的
+            latter_positive_label = positive_label  # 正样本, 与之前是一致的
             #
-            # latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
-            #     default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
-            #     positive_label=latter_positive_label, model=model,
-            #     studytype_users_dates_range=read_data_latter_data_json(current_working_directory+'/src/'+json_name)[1],
-            #     size_list=size_list, pin_list=pin_list, noise_level=noise_level)
+            latter_data_scaled, latter_labels, latter_binary_labels, latter_data_scaled_lstm= data_augment_and_label(
+                default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
+                positive_label=latter_positive_label, model=model, lstm_model=lstm_model,
+                studytype_users_dates_range=read_data_latter_data_json(current_working_directory+'/src/'+json_name)[1],
+                size_list=size_list, pin_list=pin_list, noise_level=noise_level)
             #
-            # print("")
-            # print(f"latter_data_scaled: {latter_data_scaled.shape}")
-            # print("")
+            print("")
+            print(f"latter_data_scaled: {latter_data_scaled.shape}")
+            # print(f"latter_labels: {latter_labels}")
+            print("")
             #
-            # # latter_data_scaled, latter_labels, latter_binary_labels = shuffle(latter_data_scaled, latter_labels, latter_binary_labels)
-            # # print("--------knn_binary------------")
-            # # knn_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
-            # #            latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels, test_size=test_size)
-            #
+            latter_data_scaled, latter_labels, latter_binary_labels = shuffle(latter_data_scaled, latter_labels, latter_binary_labels)
+            # print("--------knn_binary------------")
+            # knn_binary(data_scaled=scaled_data_augmented, binary_labels=binary_labels_augmented,
+            #            latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels, test_size=test_size)
+            
             # print("---------knn_multi------------")
             # knn_multi(data_scaled=data_scaled, labels=labels, latter_data_scaled=latter_data_scaled,
             #           latter_labels=latter_labels, test_size=test_size)
-            #
+            # #
+
+            print("----------rf_binary_kfold------------")
+            rf_binary_kfolds(data_scaled=data_scaled, labels=binary_labels, n_splits=n_split, latter_data_scaled=latter_data_scaled, latter_labels=latter_binary_labels)
+
+            print("----------rf_multi_kfold------------")
+            rf_multi_kfolds(data_scaled=data_scaled, labels=labels, n_splits=n_split, latter_data_scaled=latter_data_scaled, latter_labels=latter_labels)
+
+            # print("----------lstm_binary_kfolds------------")
+            # lstm_binary_kfolds(data_scaled=data_scaled_lstm, binary_labels=binary_labels, epochs=20, batch_size=4, latter_data_scaled=latter_data_scaled_lstm, latter_labels=latter_binary_labels)
+
+            # print("----------lstm_multi_kfolds------------")
+            # lstm_multi_kfolds(data_scaled=data_scaled_lstm, labels=labels, epochs=20, batch_size=4, latter_data_scaled=latter_data_scaled_lstm, latter_labels=latter_labels)
 
 
 
