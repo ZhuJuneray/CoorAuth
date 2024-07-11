@@ -19,9 +19,9 @@ def main():
     noise_level = 0.3  # noise level
     augmentation_time = 1  # 高斯噪声做数据增强的倍数
     size_list = [3]  # list of size
-    all_pin_list = [1, 3]  # pin list
+    all_pin_list = [1]  # pin list
     # 1.25更新
-    test_size_list = [0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]
+    test_size_list = [0.2]
     data_scaled_list = []
     labels_list = []
     # 0120 update
@@ -107,18 +107,18 @@ def main():
 
             ################################ 随时间推移重新检验部分
             # 日后新采的数据属性
-            # default_latter_auth_per_person = 4  # 每人采集次数
-            # latter_positive_label = positive_label  # 正样本, 与之前是一致的
-            #
-            # latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
-            #     default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
-            #     positive_label=latter_positive_label, model=model,
-            #     studytype_users_dates_range=read_data_latter_data_json(current_working_directory+'/src/'+json_name)[1],
-            #     size_list=size_list, pin_list=pin_list, noise_level=noise_level)
-            #
-            # print("")
-            # print(f"latter_data_scaled: {latter_data_scaled.shape}")
-            # print("")
+            default_latter_auth_per_person = 4  # 每人采集次数
+            latter_positive_label = positive_label  # 正样本, 与之前是一致的
+
+            latter_data_scaled, latter_labels, latter_binary_labels, _, _ = data_augment_and_label(
+                default_authentications_per_person=default_latter_auth_per_person, rotdir=os.path.join(os.getcwd(), "data/"),
+                positive_label=latter_positive_label, model=model,
+                studytype_users_dates_range=read_data_latter_data_json(current_working_directory+'/src/'+json_name)[1],
+                size_list=size_list, pin_list=pin_list, noise_level=noise_level)
+
+            print("")
+            print(f"latter_data_scaled: {latter_data_scaled.shape}")
+            print("")
             #
             # latter_data_scaled, latter_labels, latter_binary_labels = shuffle(latter_data_scaled, latter_labels, latter_binary_labels)
             # print("--------knn_binary------------")
@@ -147,7 +147,7 @@ def main():
 
             print("-----------rf_multi------------")
             rf_multi(data_scaled=data_scaled, labels=labels,
-                      latter_data_scaled=None, latter_labels=None, test_size=test_size)
+                      latter_data_scaled=latter_data_scaled, latter_labels=latter_labels, test_size=test_size)
 
 
 if __name__ == "__main__":

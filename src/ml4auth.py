@@ -316,10 +316,10 @@ def rf_multi(n_estimators=100, data_scaled=None, labels=None,
     X_test = scaler.transform(X_test)
 
 
-    # 创建svm模型
-    svm_model = RandomForestClassifier(n_estimators=n_estimators)
-    svm_model.fit(X_train, y_train)
-    y_pred = svm_model.predict(X_test)
+    # 创建rf模型
+    rf_model = RandomForestClassifier(n_estimators=n_estimators)
+    rf_model.fit(X_train, y_train)
+    y_pred = rf_model.predict(X_test)
 
     # 准确度
     accuracy = accuracy_score(y_test, y_pred)
@@ -353,10 +353,10 @@ def rf_multi(n_estimators=100, data_scaled=None, labels=None,
     if latter_labels is not None:
         latter_data_scaled = scaler.transform(latter_data_scaled)
         # if not np.isnan(latter_data_scaled):
-        latter_y_pred = svm_model.predict(latter_data_scaled)
-        latter_confidence = svm_model.decision_function(latter_data_scaled)
+        latter_y_pred = rf_model.predict(latter_data_scaled)
+        # latter_confidence = rf_model.decision_function(latter_data_scaled) #  for the random forest model, it doesn't have the confidence
         print(latter_y_pred, latter_labels)
-        print("Confidence", latter_confidence)
+        # print("Confidence", latter_confidence)
 
         latter_accuracy = accuracy_score(latter_y_pred, latter_labels)
         print('随时间推移的准确率', latter_accuracy)

@@ -52,24 +52,29 @@ def main():
     model = 'head+eye'  # model
     n_split = 4  # k fold
     noise_level = 0.3  # noise level
-    augmentation_time = 1  # guassion_aug
+    augmentation_time = 2  # guassion_aug
     size_list = [3]  # list of size
     all_pin_list = [1]  # pin list
     test_size = 0.3
 
     # 0120 update
     # json_name = 'data_condition.json'
-    # json_name = 'data_given_3days.json'
+    json_name = 'data_given_3days.json'
     # json_name = 'data_own_3days.json'
-    json_name = 'data_split_trainset.json'
+    # json_name = 'data_split_trainset.json'
+    thresholds = [0.25, 0.3, 0.35, 0.375, 0.4, 0.425, 0.45, 0.5]
+    frr_thre = []
+    far_thre = []
+    for threshold in thresholds:  # 设置合理的阈值 :
 
-    for poslabel in positive_label:
-
-        positive_label = poslabel
+        positive_label = positive_label  # TODO: Here changed
 
         print(f"************ positive_label: {positive_label} ************ ")
         print(f"model:{model}, augmentation_time: {augmentation_time}")
         print(f"studytype_users_dates_range: {read_data_latter_data_json(current_working_directory+'/src/'+json_name)[0]}")
+
+        frr_list_pin = []
+        far_list_pin = []
 
         for pin in all_pin_list:
             pin_list = [pin]
@@ -81,9 +86,9 @@ def main():
                 size_list=size_list, pin_list=pin_list,
                 noise_level=noise_level, augment_time=augmentation_time)
 
-            print(f"labels:{labels}")
-            print(f"binary_labels:{binary_labels}")
-            print(f"binary_labels_augmented:{binary_labels_augmented}")
+            # print(f"labels:{labels}")
+            # print(f"binary_labels:{binary_labels}")
+            # print(f"binary_labels_augmented:{binary_labels_augmented}")
             # print(f"data_scaled:{data_scaled.shape}")
             # 按照标准的ratio做增强
             print("")
@@ -122,8 +127,8 @@ def main():
             from sklearn.preprocessing import StandardScaler
             from sklearn.metrics import confusion_matrix
 
-            # here whether we choose binary labels
-            X_train, X_test, y_train, y_test = train_test_split(X_split, labels, test_size=test_size, stratify=labels)
+            # here whether we choose binary labels TODO:
+            X_train, X_test, y_train, y_test = train_test_split(X_split, binary_labels, test_size=test_size, stratify=labels)
 
             print("X_shape", X_train.shape, X_test.shape)
             # 对每个段独立训练分类器
@@ -160,7 +165,7 @@ def main():
             conf_matrix = confusion_matrix(y_test, final_predictions)
             accuracy = accuracy_score(y_test, final_predictions)
             print(f"Overall Accuracy: {accuracy}")
-            print(f"confusion matrix: \n {conf_matrix}")
+            # print(f"confusion matrix: \n {conf_matrix}")
             calculate_binary_frr_far(conf_matrix)
             # frr_list = []
             # far_list = []
@@ -180,30 +185,28 @@ def main():
             ## with probability
             # 对测试集进行概率投票
             final_predictions = []
-            threshold = 0.2  # 设置合理的阈值
-            print(f"class_list: {class_list}")
+            # print(f"class_list: {class_list}")
             print(f"Threshold: {threshold}")
             for sample in X_test:
                 segment_proba = [classifier.predict_proba(sample[segment, :].reshape(1, -1))[0] for segment, classifier
                                  in enumerate(classifiers)]
                 avg_proba = np.mean(segment_proba, axis=0)  # 对每个类的概率进行平均
                 # print("segment_proba", segment_proba)
-                print("avg_proba", avg_proba)
+                # print("avg_proba", avg_proba)
 
-                if max(avg_proba) > threshold:
-                    # final_prediction = np.argmax(avg_proba)  # 选最大的
-                    final_prediction = np.random.choice(np.flatnonzero(avg_proba > threshold))  # 随机选一个超过阈值的
+                if avg_proba[1] > threshold:
+                    final_prediction = 1  # 选择正标签
                 else:
-                    final_prediction = np.random.choice(np.flatnonzero(avg_proba == avg_proba.max()))  # 置信度低时随机选择
+                    final_prediction = 0  # 选择负标签
 
-                final_predictions.append(class_list[final_prediction])
+                final_predictions.append(final_prediction)
 
             # 评估整体性能
             conf_matrix = confusion_matrix(y_test, final_predictions)
             accuracy = accuracy_score(y_test, final_predictions)
             print(f"Overall Accuracy: {accuracy}")
-            print(f"confusion matrix: \n {conf_matrix}")
-            calculate_binary_frr_far(conf_matrix)
+            # print(f"confusion matrix: \n {conf_matrix}")
+            frr, far = calculate_binary_frr_far(conf_matrix)
             # frr_list = []
             # far_list = []
             #
@@ -218,7 +221,8 @@ def main():
             # frr_std = np.std(frr_list) / np.sqrt(len(frr_list))
             # far_std = np.std(far_list) / np.sqrt(len(far_list))
             # print(f"Frr: {frr_mean}, Far: {far_mean}, StdFrr: {frr_std}, StdFar: {far_std}")
-
+            frr_thre.append(frr)
+            far_thre.append(far)
             # vote4auth(data_scaled=data_scaled, labels=labels, test_size=test_size, n_segments=n_segments)
             # 数据增强后的数据和标签跑模型
             # print("")
@@ -278,6 +282,17 @@ def main():
 
             # print("---------rf_multi------------")
             # rf_multi(data_scaled=data_scaled, labels=labels, test_size=test_size)
+
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(10, 6))
+    plt.plot(thresholds, frr_thre, label='FRR', marker='o')
+    plt.plot(thresholds, far_thre, label='FAR', marker='x')
+    plt.xlabel('Threshold')
+    plt.ylabel('Rate')
+    plt.title('FRR and FAR vs. Threshold')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 
 if __name__ == "__main__":
