@@ -59,6 +59,29 @@ def vote4auth(classifier=RandomForestClassifier(n_estimators=100), data_scaled=N
         final_prediction = max(set(segment_predictions), key=segment_predictions.count)  # 硬投票
         final_predictions.append(final_prediction)
 
+    ## with probability
+    # 对测试集进行概率投票
+    final_predictions = []
+    threshold = 0.1  # 设置合理的阈值
+
+    for sample in X_test:
+        segment_proba = [classifier.predict_proba(sample[segment, :].reshape(1, -1))[0] for segment, classifier
+                         in enumerate(classifiers)]
+        avg_proba = np.mean(segment_proba, axis=0)  # 对每个类的概率进行平均
+        print("segment_proba", segment_proba)
+        print("avg_proba", avg_proba)
+
+        if max(avg_proba) > threshold:
+            final_prediction = np.argmax(avg_proba)
+        else:
+            final_prediction = np.random.choice(np.flatnonzero(avg_proba == avg_proba.max()))  # 置信度低时随机选择
+
+        final_predictions.append(final_prediction)
+
+    # 确保标签类型一致
+    final_predictions = np.array(final_predictions).astype(str)
+    y_test = np.array(y_test).astype(str)
+
     # 评估整体性能
     conf_matrix = confusion_matrix(y_test, final_predictions)
     accuracy = accuracy_score(y_test, final_predictions)

@@ -4,45 +4,45 @@
             "studytype": "study2",
             "names": 4,
             "date": "0117",
-            "num_range": "1-10"
+            "num_range": "1-5"
         },
         {
             "studytype": "study2",
             "names": 5,
             "date": "0117",
-            "num_range": "1-10"
+            "num_range": "1-5"
         },
         {
             "studytype": "study2",
             "names": 6,
             "date": "0117",
-            "num_range": "1-10"
+            "num_range": "1-5"
         },
 
         {
             "studytype": "study2",
             "names": 8,
             "date": "0117",
-            "num_range": "1-10"
+            "num_range": "1-5"
         },
         {
             "studytype": "study2",
             "names": 9,
             "date": "0118",
-            "num_range": "1-10"
+            "num_range": "1-5"
         },
         {
             "studytype": "study2",
             "names": 10,
             "date": "0118",
-            "num_range": "1-10"
+            "num_range": "1-5"
         },
 
         {
             "studytype": "study2",
             "names": 12,
             "date": "0118",
-            "num_range": "1-10"
+            "num_range": "1-5"
         },
         {
             "studytype": "study2",
@@ -107,6 +107,43 @@
 
     ],
     "latter_auth": [
+        {
+            "studytype": "study2",
+            "names": 4,
+            "date": "0117",
+            "num_range": "6-10"
+        },
+        {
+            "studytype": "study2",
+            "names": 5,
+            "date": "0117",
+            "num_range": "6-10"
+        },
+        {
+            "studytype": "study2",
+            "names": 6,
+            "date": "0117",
+            "num_range": "6-10"
+        },
+
+        {
+            "studytype": "study2",
+            "names": 8,
+            "date": "0117",
+            "num_range": "6-10"
+        },
+        {
+            "studytype": "study2",
+            "names": 9,
+            "date": "0118",
+            "num_range": "6-10"
+        },
+        {
+            "studytype": "study2",
+            "names": 10,
+            "date": "0118",
+            "num_range": "6-10"
+        },
 
         {
             "studytype": "study2",
