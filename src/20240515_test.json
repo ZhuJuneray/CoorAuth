@@ -1,0 +1,58 @@
+{
+    "data": [
+
+        {
+            "studytype": "study2",
+            "names": 20,
+            "date": "0119",
+            "num_range": "1-15"
+        },
+        {
+            "studytype": "study2",
+            "names": 17,
+            "date": "0119",
+            "num_range": "1-15"
+        },
+        {
+            "studytype": "study2",
+            "names": 14,
+            "date": "0118",
+            "num_range": "1-10"
+        },
+        {
+            "studytype": "study2",
+            "names": 11,
+            "date": "0118",
+            "num_range": "1-7"
+        }
+
+
+    ],
+    "latter_auth": [
+
+        {
+            "studytype": "study2",
+            "names": 20,
+            "date": "0121",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 17,
+            "date": "0121",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 14,
+            "date": "0120",
+            "num_range": "1-7"
+        },
+        {
+            "studytype": "study2",
+            "names": 11,
+            "date": "0120",
+            "num_range": "1-7"
+        }
+    ]
+}

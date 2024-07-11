@@ -1,0 +1,4 @@
+************ positive_label: ['14'] ************ 
+model:head+eye, augmentation_time: 2
+studytype_users_dates_range: ['study2_4_0117_1-10', 'study2_5_0117_1-10', 'study2_6_0117_1-10', 'study2_8_0117_1-10']
+----------------pin_list: [1]----------------

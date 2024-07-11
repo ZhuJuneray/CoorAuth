@@ -1,0 +1,135 @@
+{'Q1': <class 'statsmodels.iolib.summary2.Summary'>
+"""
+             Anova
+===============================
+  F Value Num DF  Den DF Pr > F
+-------------------------------
+S  1.7886 3.0000 45.0000 0.1629
+===============================
+
+""", 'Q2': <class 'statsmodels.iolib.summary2.Summary'>
+"""
+             Anova
+===============================
+  F Value Num DF  Den DF Pr > F
+-------------------------------
+S 45.0954 3.0000 45.0000 0.0000
+===============================
+
+""", 'Q3': <class 'statsmodels.iolib.summary2.Summary'>
+"""
+             Anova
+===============================
+  F Value Num DF  Den DF Pr > F
+-------------------------------
+S  3.6076 3.0000 45.0000 0.0203
+===============================
+
+""", 'Q4': <class 'statsmodels.iolib.summary2.Summary'>
+"""
+             Anova
+===============================
+  F Value Num DF  Den DF Pr > F
+-------------------------------
+S  6.0207 3.0000 45.0000 0.0015
+===============================
+
+""", 'Q5': <class 'statsmodels.iolib.summary2.Summary'>
+"""
+             Anova
+===============================
+  F Value Num DF  Den DF Pr > F
+-------------------------------
+S  8.4783 3.0000 45.0000 0.0001
+===============================
+
+""", 'Q6': <class 'statsmodels.iolib.summary2.Summary'>
+"""
+             Anova
+===============================
+  F Value Num DF  Den DF Pr > F
+-------------------------------
+S 30.5696 3.0000 45.0000 0.0000
+===============================
+
+""", 'Q7': <class 'statsmodels.iolib.summary2.Summary'>
+"""
+             Anova
+===============================
+  F Value Num DF  Den DF Pr > F
+-------------------------------
+S  4.6080 3.0000 45.0000 0.0068
+===============================
+
+"""}
+{'Q1':   Contrast  A  B  Paired  Parametric         T   dof alternative     p-unc    p-corr    p-adjust   BF10    hedges
+0        S  1  2    True        True -0.807573  15.0   two-sided  0.431957  1.000000  bonferroni   0.34 -0.237824
+1        S  1  3    True        True  0.415227  15.0   two-sided  0.683854  1.000000  bonferroni  0.276  0.111620
+2        S  1  4    True        True  1.369306  15.0   two-sided  0.191058  1.000000  bonferroni  0.562  0.371996
+3        S  2  3    True        True  1.307234  15.0   two-sided  0.210818  1.000000  bonferroni  0.526  0.355329
+4        S  2  4    True        True  1.771873  15.0   two-sided  0.096723  0.580337  bonferroni  0.912  0.581013
+5        S  3  4    True        True  1.378916  15.0   two-sided  0.188137  1.000000  bonferroni  0.568  0.278322, 'Q2':   Contrast  A  B  Paired  Parametric         T   dof alternative         p-unc    p-corr    p-adjust       BF10    hedges
+0        S  1  2    True        True  1.651446  15.0   two-sided  1.194224e-01  0.716534  bonferroni      0.782  0.395764
+1        S  1  3    True        True  6.536170  15.0   two-sided  9.420279e-06  0.000057  bonferroni   2333.884  1.531105
+2        S  1  4    True        True  7.994563  15.0   two-sided  8.683318e-07  0.000005  bonferroni  2.005e+04  2.345054
+3        S  2  3    True        True  5.367450  15.0   two-sided  7.836007e-05  0.000470  bonferroni    353.706  1.097433
+4        S  2  4    True        True  7.348469  15.0   two-sided  2.411835e-06  0.000014  bonferroni   7953.913  1.979121
+5        S  3  4    True        True  6.789029  15.0   two-sided  6.105373e-06  0.000037  bonferroni   3444.878  1.095262, 'Q3':   Contrast  A  B  Paired  Parametric         T   dof alternative     p-unc    p-corr    p-adjust   BF10    hedges
+0        S  1  2    True        True -1.775179  15.0   two-sided  0.096157  0.576943  bonferroni  0.916 -0.543117
+1        S  1  3    True        True -1.908082  15.0   two-sided  0.075709  0.454252  bonferroni  1.095 -0.592216
+2        S  1  4    True        True  0.719195  15.0   two-sided  0.483076  1.000000  bonferroni   0.32  0.185998
+3        S  2  3    True        True  0.000000  15.0   two-sided  1.000000  1.000000  bonferroni  0.255  0.000000
+4        S  2  4    True        True  2.405702  15.0   two-sided  0.029494  0.176966  bonferroni  2.275  0.690692
+5        S  3  4    True        True  2.573251  15.0   two-sided  0.021197  0.127182  bonferroni  2.964  0.740988, 'Q4':   Contrast  A  B  Paired  Parametric         T   dof alternative     p-unc    p-corr    p-adjust    BF10    hedges
+0        S  1  2    True        True -1.666667  15.0   two-sided  0.116319  0.697915  bonferroni   0.797 -0.600549
+1        S  1  3    True        True  0.333333  15.0   two-sided  0.743496  1.000000  bonferroni   0.268  0.106358
+2        S  1  4    True        True  2.150033  15.0   two-sided  0.048272  0.289631  bonferroni   1.545  0.584540
+3        S  2  3    True        True  3.000000  15.0   two-sided  0.008973  0.053836  bonferroni   5.982  0.887124
+4        S  2  4    True        True  3.674235  15.0   two-sided  0.002255  0.013530  bonferroni  19.073  1.195531
+5        S  3  4    True        True  2.665570  15.0   two-sided  0.017634  0.105803  bonferroni   3.439  0.548105, 'Q5':   Contrast  A  B  Paired  Parametric         T   dof alternative     p-unc    p-corr    p-adjust     BF10    hedges
+0        S  1  2    True        True -1.256562  15.0   two-sided  0.228129  1.000000  bonferroni    0.499 -0.402453
+1        S  1  3    True        True  0.393693  15.0   two-sided  0.699347  1.000000  bonferroni    0.274  0.136946
+2        S  1  4    True        True  2.815096  15.0   two-sided  0.013056  0.078335  bonferroni    4.393  0.976824
+3        S  2  3    True        True  2.111743  15.0   two-sided  0.051895  0.311369  bonferroni    1.461  0.676541
+4        S  2  4    True        True  4.993889  15.0   two-sided  0.000160  0.000962  bonferroni  188.279  1.574145
+5        S  3  4    True        True  3.780389  15.0   two-sided  0.001815  0.010887  bonferroni   22.954  0.960862, 'Q6':   Contrast  A  B  Paired  Parametric         T   dof alternative     p-unc    p-corr    p-adjust      BF10    hedges
+0        S  1  2    True        True  0.939336  15.0   two-sided  0.362439  1.000000  bonferroni     0.374  0.217970
+1        S  1  3    True        True  5.325537  15.0   two-sided  0.000085  0.000509  bonferroni   329.743  1.531105
+2        S  1  4    True        True  6.343350  15.0   two-sided  0.000013  0.000079  bonferroni  1726.318  2.212674
+3        S  2  3    True        True  7.344125  15.0   two-sided  0.000002  0.000015  bonferroni  7903.428  1.296966
+4        S  2  4    True        True  6.572671  15.0   two-sided  0.000009  0.000053  bonferroni   2469.87  2.010046
+5        S  3  4    True        True  3.149291  15.0   two-sided  0.006616  0.039696  bonferroni     7.703  0.885397, 'Q7':   Contrast  A  B  Paired  Parametric         T   dof alternative     p-unc    p-corr    p-adjust    BF10    hedges
+0        S  1  2    True        True -3.985267  15.0   two-sided  0.001195  0.007168  bonferroni  32.834 -1.138309
+1        S  1  3    True        True -3.085123  15.0   two-sided  0.007543  0.045258  bonferroni   6.907 -0.984284
+2        S  1  4    True        True -2.002474  15.0   two-sided  0.063653  0.381916  bonferroni   1.249 -0.724416
+3        S  2  3    True        True  0.587596  15.0   two-sided  0.565545  1.000000  bonferroni   0.297  0.165278
+4        S  2  4    True        True  0.764471  15.0   two-sided  0.456445  1.000000  bonferroni    0.33  0.270589
+5        S  3  4    True        True  0.417365  15.0   two-sided  0.682324  1.000000  bonferroni   0.276  0.133851}
+Question: Q1, S: 1, M: 5.625, SE: 0.2719528145346787
+Question: Q1, S: 2, M: 5.875, SE: 0.23935677693908453
+Question: Q1, S: 3, M: 5.5, SE: 0.27386127875258304
+Question: Q1, S: 4, M: 5.125, SE: 0.375
+Question: Q2, S: 1, M: 6.125, SE: 0.3010398644698074
+Question: Q2, S: 2, M: 5.625, SE: 0.3145764348029479
+Question: Q2, S: 3, M: 4.25, SE: 0.2958039891549808
+Question: Q2, S: 4, M: 2.625, SE: 0.4170831252080733
+Question: Q3, S: 1, M: 5.375, SE: 0.3010398644698074
+Question: Q3, S: 2, M: 6.0, SE: 0.2581988897471611
+Question: Q3, S: 3, M: 6.0, SE: 0.2041241452319315
+Question: Q3, S: 4, M: 5.125, SE: 0.3520771695712935
+Question: Q4, S: 1, M: 5.9375, SE: 0.3223449239556907
+Question: Q4, S: 2, M: 6.5625, SE: 0.15728821740147395
+Question: Q4, S: 3, M: 5.8125, SE: 0.2452677108793573
+Question: Q4, S: 4, M: 5.0625, SE: 0.4027897507798992
+Question: Q5, S: 1, M: 5.5, SE: 0.3763863263545405
+Question: Q5, S: 2, M: 6.0, SE: 0.2041241452319315
+Question: Q5, S: 3, M: 5.3125, SE: 0.28458668860881975
+Question: Q5, S: 4, M: 3.9375, SE: 0.4027897507798992
+Question: Q6, S: 1, M: 6.125, SE: 0.2719528145346787
+Question: Q6, S: 2, M: 5.875, SE: 0.28686524130097507
+Question: Q6, S: 3, M: 4.25, SE: 0.3227486121839514
+Question: Q6, S: 4, M: 2.875, SE: 0.42695628191498325
+Question: Q7, S: 1, M: 4.625, SE: 0.3637192140465866
+Question: Q7, S: 2, M: 6.125, SE: 0.2719528145346787
+Question: Q7, S: 3, M: 5.9375, SE: 0.2809025631780529
+Question: Q7, S: 4, M: 5.75, SE: 0.39264063297965823

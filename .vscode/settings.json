@@ -1,5 +1,6 @@
 {
     "dotnet.preferCSharpExtension": true,
     "python.REPL.enableREPLSmartSend": false,
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "CodeGPT.apiKey": "CodeGPT Plus Beta"
 }

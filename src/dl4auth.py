@@ -6,6 +6,13 @@ from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKF
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, classification_report
 import os, json, re, sys
 from data_preprocess import data_augment_and_label, read_data_latter_data_json
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.optimizers import Adam
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.utils import to_categorical
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
 
 
 ################################################################ mlp binary
@@ -211,3 +218,291 @@ def mlp_multi_kfolds(hidden_layer_sizes=(256, ), activation='relu', solver='adam
 
     print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
           "\nf1s:", average_f1s)
+    
+
+################################################################ lstm binary
+def lstm_binary(hidden_units=50, activation='tanh', dropout=0.2, recurrent_dropout=0.2, optimizer='adam', epochs=10, batch_size=4, 
+                data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None, test_size=0.2):
+    # 划分数据集
+    X_train, X_test, y_train, y_test = train_test_split(np.array(data_scaled), np.array(binary_labels), test_size=test_size)
+    print(f"X_train.shape = ", X_train.shape)
+
+    # 数据标准化
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train.reshape(-1, X_train.shape[-1])).reshape(X_train.shape)
+    X_test = scaler.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
+    if latter_data_scaled is not None:
+        latter_data_scaled = scaler.transform(latter_data_scaled.reshape(-1, latter_data_scaled.shape[-1])).reshape(latter_data_scaled.shape)
+
+    # 构建 LSTM 模型
+    model = Sequential()
+    model.add(LSTM(hidden_units, activation=activation, dropout=dropout, recurrent_dropout=recurrent_dropout, input_shape=(X_train.shape[1], X_train.shape[2])))
+    model.add(Dense(1, activation='sigmoid'))  # 适用于二分类
+
+    # 编译模型
+    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+
+    # 训练模型
+    model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=0)
+
+    # 预测
+    y_pred = (model.predict(X_test) > 0.5).astype(int)
+
+    # 准确度
+    accuracy = accuracy_score(y_test, y_pred)
+    print("准确度:", accuracy)
+
+    # 混淆矩阵
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    print("混淆矩阵:")
+    print(conf_matrix)
+
+    # 精确度、召回率、F1分数
+    precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary', zero_division=True)
+    print("精确度:", precision)
+    print("召回率:", recall)
+    print("F1分数:", f1)
+
+    # 从混淆矩阵中提取指标
+    true_positive = conf_matrix[1, 1]
+    false_positive = conf_matrix[0, 1]
+    true_negative = conf_matrix[0, 0]
+    false_negative = conf_matrix[1, 0]
+
+    # 计算 FAR 和 FRR
+    far = false_positive / (false_positive + true_negative)
+    frr = false_negative / (false_negative + true_positive)
+
+    # 打印结果
+    print(f"FAR: {far:.4f}")
+    print(f"FRR: {frr:.4f}")
+
+    # 对未来数据进行预测
+    latter_y_pred = (model.predict(latter_data_scaled) > 0.5).astype(int)
+    print(latter_y_pred, latter_labels)
+
+    latter_accuracy = accuracy_score(latter_labels, latter_y_pred)
+    print('随时间推移的准确率:', latter_accuracy)
+
+def lstm_binary_kfolds(hidden_units=50, activation='tanh', dropout=0.2, recurrent_dropout=0.2, optimizer='SGD', 
+                       epochs=10, batch_size=4, n_splits=5, data_scaled=None, binary_labels=None, latter_data_scaled=None, latter_labels=None):
+    # 设置交叉验证的折叠数
+    kf = StratifiedKFold(n_splits=n_splits, shuffle=True)
+    
+    # 初始化指标列表
+    accuracies = []
+    precisions = []
+    recalls = []
+    f1s = []
+    fars = []
+    frrs = []
+    accuracies_latter = []
+    precisions_latter = []
+    recalls_latter = []
+    f1s_latter = []
+    fars_latter = []
+    frrs_latter = []
+    
+    for train_index, test_index in kf.split(data_scaled, binary_labels):
+        X_train, X_test = data_scaled[train_index], data_scaled[test_index]
+        y_train, y_test = binary_labels[train_index], binary_labels[test_index]
+        
+        # 数据标准化
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train.reshape(-1, X_train.shape[-1])).reshape(X_train.shape)
+        X_test = scaler.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
+        latter_data_scaled = scaler.transform(latter_data_scaled.reshape(-1, latter_data_scaled.shape[-1])).reshape(latter_data_scaled.shape)
+        
+        # 构建 LSTM 模型
+        model = Sequential()
+        model.add(LSTM(hidden_units, activation=activation, dropout=dropout, recurrent_dropout=recurrent_dropout, input_shape=(X_train.shape[1], X_train.shape[2])))
+        model.add(Dense(1, activation='sigmoid'))  # 适用于二分类
+        
+        # 编译模型
+        model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+        
+        # 训练模型
+        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=0)
+        
+        # 预测
+        y_pred = (model.predict(X_test) > 0.5).astype(int)
+        
+        # 计算指标
+        accuracy = accuracy_score(y_test, y_pred)
+        accuracies.append(accuracy)
+        precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary', zero_division=1)
+        precisions.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+        
+        # conf_matrix = confusion_matrix(y_test, y_pred)
+        # true_positive = conf_matrix[1, 1]
+        # false_positive = conf_matrix[0, 1]
+        # true_negative = conf_matrix[0, 0]
+        # false_negative = conf_matrix[1, 0]
+        
+        # 计算 FAR 和 FRR
+        # far = false_positive / (false_positive + true_negative)
+        # frr = false_negative / (false_negative + true_positive)
+        # fars.append(far)
+        # frrs.append(frr)
+
+        # 对未来数据进行预测
+        latter_y_pred = (model.predict(latter_data_scaled) > 0.5).astype(int)
+        accuracy_latter = accuracy_score(latter_labels, latter_y_pred)
+        accuracies_latter.append(accuracy_latter)
+        precision_latter, recall_latter, f1_latter, _ = precision_recall_fscore_support(latter_labels, latter_y_pred, average='binary', zero_division=1)
+        precisions_latter.append(precision_latter)
+        recalls_latter.append(recall_latter)
+        f1s_latter.append(f1_latter)
+
+        print("latter_y_pred, latter_labels")
+        print(latter_y_pred, latter_labels)
+
+        # latter_conf_matrix = confusion_matrix(latter_labels, latter_y_pred)
+        # latter_true_positive = latter_conf_matrix[1, 1]
+        # latter_false_positive = latter_conf_matrix[0, 1]
+        # latter_true_negative = latter_conf_matrix[0, 0]
+        # latter_false_negative = latter_conf_matrix[1, 0]
+
+        # # 计算 FAR 和 FRR
+        # latter_far = latter_false_positive / (latter_false_positive + latter_true_negative)
+        # latter_frr = latter_false_negative / (latter_false_negative + latter_true_positive)
+        # fars_latter.append(latter_far)
+        # frrs_latter.append(latter_frr)
+    
+    # 打印平均指标
+    print(f"lstm_binary_kfolds")
+
+    average_accuracy = np.mean(accuracies)
+    average_precision = np.mean(precisions)
+    average_recalls = np.mean(recalls)
+    average_f1s = np.mean(f1s)
+    average_fars = np.mean(fars)
+    average_frrs = np.mean(frrs)
+
+    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+          "\nf1s:", average_f1s, "\nFAR:", average_fars, "\nFRR:", average_frrs)
+
+    # 打印平均指标
+    print(f"lstm_binary_kfolds_latter")
+
+    average_accuracy_latter = np.mean(accuracies_latter)
+    average_precision_latter = np.mean(precisions_latter)
+    average_recalls_latter = np.mean(recalls_latter)
+    average_f1s_latter = np.mean(f1s_latter)
+    average_fars_latter = np.mean(fars_latter)
+    average_frrs_latter = np.mean(frrs_latter)
+
+    print("Average Accuracy:", average_accuracy_latter, "\nprecision:", average_precision_latter, "\nrecalls:", average_recalls_latter, "\nf1s:", average_f1s_latter, "\nFAR:", average_fars_latter, "\nFRR:", average_frrs_latter)
+
+
+def lstm_multi_kfolds(hidden_units=50, activation='tanh', dropout=0.2, recurrent_dropout=0.2, optimizer='SGD', 
+                      epochs=10, batch_size=4, n_splits=5, data_scaled=None, labels=None, latter_data_scaled=None, latter_labels=None):
+    # 设置交叉验证的折叠数
+    kf = StratifiedKFold(n_splits=n_splits, shuffle=True)
+    
+    # 初始化指标列表
+    accuracies = []
+    precisions = []
+    recalls = []
+    f1s = []
+    fars = []
+    frrs = []
+    accuracies_latter = []
+    precisions_latter = []
+    recalls_latter = []
+    f1s_latter = []
+    fars_latter = []
+    frrs_latter = []
+    
+    for train_index, test_index in kf.split(data_scaled, labels):
+        X_train, X_test = data_scaled[train_index], data_scaled[test_index]
+        y_train, y_test = labels[train_index], labels[test_index]
+        
+        # 数据标准化
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train.reshape(-1, X_train.shape[-1])).reshape(X_train.shape)
+        X_test = scaler.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
+        
+        # One-hot 编码
+        y_train = to_categorical(y_train)
+        y_test = to_categorical(y_test)
+        
+        # 构建 LSTM 模型
+        model = Sequential()
+        model.add(LSTM(hidden_units, activation=activation, dropout=dropout, recurrent_dropout=recurrent_dropout, input_shape=(X_train.shape[1], X_train.shape[2])))
+        model.add(Dense(y_train.shape[1], activation='softmax'))  # 适用于多分类
+        
+        # 编译模型
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        
+        # 训练模型
+        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=0)
+        
+        # 预测
+        y_pred = model.predict(X_test)
+        y_pred_classes = np.argmax(y_pred, axis=1)
+        y_test_classes = np.argmax(y_test, axis=1)
+        
+        # 计算指标
+        accuracy = accuracy_score(y_test_classes, y_pred_classes)
+        accuracies.append(accuracy)
+        precision, recall, f1, _ = precision_recall_fscore_support(y_test_classes, y_pred_classes, average='weighted', zero_division=1)
+        precisions.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+        # print(f"train",y_test_classes, y_pred_classes)
+        # conf_matrix = confusion_matrix(y_test_classes, y_pred_classes)
+        # true_positive = np.diag(conf_matrix)
+        # false_positive = np.sum(conf_matrix, axis=0) - true_positive
+        # false_negative = np.sum(conf_matrix, axis=1) - true_positive
+        # true_negative = np.sum(conf_matrix) - true_positive - false_positive - false_negative
+        # far = false_positive / (false_positive + true_negative)
+        # frr = false_negative / (false_negative + true_positive)
+        # fars.append(far)
+        # frrs.append(frr)
+
+        # 对未来数据进行预测
+        latter_y_pred = model.predict(latter_data_scaled)
+        latter_labels = to_categorical(latter_labels)
+        latter_labels = np.argmax(latter_labels, axis=1)
+        latter_y_pred_classes = np.argmax(latter_y_pred, axis=1)
+        accuracy_latter = accuracy_score(latter_labels, latter_y_pred_classes)
+        accuracies_latter.append(accuracy_latter)
+        precision_latter, recall_latter, f1_latter, _ = precision_recall_fscore_support(latter_labels, latter_y_pred_classes, average='weighted', zero_division=1)
+        precisions_latter.append(precision_latter)
+        recalls_latter.append(recall_latter)
+        f1s_latter.append(f1_latter)
+
+        print("latter_y_pred, latter_labels")
+        print(latter_y_pred, latter_labels)
+
+        
+
+    
+    # 打印平均指标
+    print(f"lstm_multi_kfolds")
+
+    average_accuracy = np.mean(accuracies)
+    average_precision = np.mean(precisions)
+    average_recalls = np.mean(recalls)
+    average_f1s = np.mean(f1s)
+    average_fars = np.mean(fars)
+    average_frrs = np.mean(frrs)
+
+    print("Average Accuracy:", average_accuracy, "\nprecision:", average_precision, "\nrecalls:", average_recalls,
+          "\nf1s:", average_f1s, "\nFAR:", average_fars, "\nFRR:", average_frrs)
+
+    # 打印平均指标
+    print(f"lstm_multi_kfolds_latter")
+
+    average_accuracy_latter = np.mean(accuracies_latter)
+    average_precision_latter = np.mean(precisions_latter)
+    average_recalls_latter = np.mean(recalls_latter)
+    average_f1s_latter = np.mean(f1s_latter)
+    average_fars_latter = np.mean(fars_latter)
+    average_frrs_latter = np.mean(frrs_latter)
+
+    print("Average Accuracy:", average_accuracy_latter, "\nprecision:", average_precision_latter, "\nrecalls:", average_recalls_latter, "\nf1s:", average_f1s_latter, "\nFAR:", average_fars_latter, "\nFRR:", average_frrs_latter)
+

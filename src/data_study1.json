@@ -2,8 +2,80 @@
     "data": [
         {
             "studytype": "study1",
-            "names": 14,
-            "date": "1231",
+            "names": 1,
+            "date": "1228",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 2,
+            "date": "1228",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 3,
+            "date": "1228",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 4,
+            "date": "1228",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 5,
+            "date": "1228",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 6,
+            "date": "1228",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 7,
+            "date": "1229",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 8,
+            "date": "1229",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 9,
+            "date": "1229",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 10,
+            "date": "1229",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 11,
+            "date": "1229",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 12,
+            "date": "1229",
+            "num_range": "1-4"
+        },
+        {
+            "studytype": "study1",
+            "names": 13,
+            "date": "1229",
             "num_range": "1-4"
         },
         {
